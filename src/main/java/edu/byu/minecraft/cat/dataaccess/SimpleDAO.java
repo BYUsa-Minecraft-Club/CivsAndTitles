@@ -5,7 +5,7 @@ import java.util.Collection;
 public interface SimpleDAO<T, U> {
     T get(U u) throws DataAccessException;
     Collection<T> getAll() throws DataAccessException;
-    int insert(T t) throws DataAccessException;
+    U insert(T t) throws DataAccessException;
     void delete(U u) throws DataAccessException;
     void update(T t) throws DataAccessException;
 }
