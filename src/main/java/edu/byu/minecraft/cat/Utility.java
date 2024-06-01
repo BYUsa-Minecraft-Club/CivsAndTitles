@@ -17,7 +17,7 @@ public class Utility {
 
     /***
      * Creates a Location object based on a player model
-     * @param player
+     * @param player the ServerPlayerEntity data for the player
      * @return null if the player is null.  Otherwise, a Location Object.
      */
     public static Location getPlayerLocation(ServerPlayerEntity player) {
