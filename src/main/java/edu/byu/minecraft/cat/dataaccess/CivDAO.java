@@ -21,6 +21,14 @@ public interface CivDAO extends SimpleDAO<Civ, Integer> {
 
 
     /**
+     * Gets a civ by the name
+     * @param name civ name to retrieve matching civ
+     * @return a civ with name name or null if it doesn't exist
+     * @throws DataAccessException If database cannot be accessed
+     */
+    Civ getForName(String name) throws DataAccessException;
+
+    /**
      * Gets civs with a certain activity status
      *
      * @param active activity status to match
