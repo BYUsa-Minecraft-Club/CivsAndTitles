@@ -84,6 +84,20 @@ public class SuggestionProviders {
         return builder.buildFuture();
     }
 
+    public static CompletableFuture<Suggestions> ledCivs(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
+        ServerPlayerEntity player = ctx.getSource().getPlayer();
+        try {
+            Collection<Civ> civs = CivsAndTitles.getDataAccess().getCivDAO().getForPlayer(player.getUuid());
+            for(Civ civ: civs) {
+                if(civ.owner().equals(player.getUuid()) || civ.leaders().contains(player.getUuid())){
+                    builder.suggest(civ.name());
+                }
+            }
+        } catch (DataAccessException e) {
+            throw new RuntimeException(e);
+        }
+        return builder.buildFuture();
+    }
     public static CompletableFuture<Suggestions> myBuilds(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
         ServerPlayerEntity player = ctx.getSource().getPlayer();
         try {

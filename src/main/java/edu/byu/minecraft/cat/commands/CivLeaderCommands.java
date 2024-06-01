@@ -1,14 +1,28 @@
 package edu.byu.minecraft.cat.commands;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.Message;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandExceptionType;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import edu.byu.minecraft.cat.CivsAndTitles;
+import edu.byu.minecraft.cat.Utility;
+import edu.byu.minecraft.cat.dataaccess.CivDAO;
+import edu.byu.minecraft.cat.dataaccess.DataAccessException;
+import edu.byu.minecraft.cat.dataaccess.JoinRequestDAO;
+import edu.byu.minecraft.cat.model.Civ;
+import edu.byu.minecraft.cat.model.JoinRequest;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.command.CommandManager;
+import net.minecraft.server.command.MessageCommand;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
+
+import java.util.Collection;
+import java.util.UUID;
 
 import static net.minecraft.server.command.CommandManager.argument;
 import static net.minecraft.server.command.CommandManager.literal;
@@ -20,26 +34,54 @@ public class CivLeaderCommands {
                         .then(argument("requestId", IntegerArgumentType.integer(1)).suggests(SuggestionProviders::myJoinRequests).then(argument("accept", BoolArgumentType.bool()).executes(CivLeaderCommands::respondJoinRequest))))
                 .then(literal("listJoinRequests").executes(CivLeaderCommands::listJoinRequests))
                 .then(literal("addLeader")
-                        .then(argument("playerName", StringArgumentType.string()).suggests(SuggestionProviders::civPlayers).executes(CivLeaderCommands::addLeader)))
+                        .then(argument("civName", StringArgumentType.string()).suggests(SuggestionProviders::ledCivs)
+                        .then(argument("playerName", StringArgumentType.string()).suggests(SuggestionProviders::civPlayers).executes(CivLeaderCommands::addLeader))))
                 .then(literal("removeMember")
-                                .then(argument("playerName", StringArgumentType.string()).suggests(SuggestionProviders::civPlayers).executes(CivLeaderCommands::removeMember))
+                        .then(argument("civName", StringArgumentType.string()).suggests(SuggestionProviders::ledCivs)
+                                .then(argument("playerName", StringArgumentType.string()).suggests(SuggestionProviders::civPlayers).executes(CivLeaderCommands::removeMember)))
         ));
 
         dispatcher.register(literal("civ").requires(ServerCommandSource::isExecutedByPlayer).requires(PermissionCheckers::isCivOwner)
                 .then(literal("changeOwner")
-                        .then(argument("playerName", StringArgumentType.string()).suggests(SuggestionProviders::civLeaders).executes(CivLeaderCommands::changeOwner)))
+                        .then(argument("civName", StringArgumentType.string()).suggests(SuggestionProviders::ownedCivs)
+                        .then(argument("playerName", StringArgumentType.string()).suggests(SuggestionProviders::civLeaders).executes(CivLeaderCommands::changeOwner))))
                 .then(literal("deleteCiv")
                         .then(argument("civName", StringArgumentType.string()).suggests(SuggestionProviders::ownedCivs).executes(CivLeaderCommands::deleteCiv)))
                 .then(literal("removeLeader")
-                        .then(argument("playerName", StringArgumentType.string()).suggests(SuggestionProviders::civLeaders).executes(CivLeaderCommands::removeLeader)))
+                        .then(argument("civName", StringArgumentType.string()).suggests(SuggestionProviders::ownedCivs)
+                        .then(argument("playerName", StringArgumentType.string()).suggests(SuggestionProviders::civLeaders).executes(CivLeaderCommands::removeLeader))))
         );
     }
 
-    public static Integer respondJoinRequest(CommandContext<ServerCommandSource> ctx) {
+    public static Integer respondJoinRequest(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
         Integer requestId = ctx.getArgument("requestId", Integer.class);
-        boolean accept = ctx.getArgument("accept", Boolean.class);
+        boolean accept = ctx.getArgument("accept", Boolean.class);]
+        UUID player = ctx.getSource().getPlayer().getUuid();
         ctx.getSource().sendFeedback(()-> Text.literal("Response to request  " + requestId + " "+ accept), false);
-        //TODO
+        JoinRequest request = null;
+
+        try {
+            JoinRequestDAO requestDAO =  CivsAndTitles.getDataAccess().getJoinRequestDAO();
+            request =requestDAO.get(requestId);
+            if (request == null)
+            {
+                throw new CommandSyntaxException(CommandSyntaxException.BUILT_IN_EXCEPTIONS.literalIncorrect(), Text.literal("Invalid request ID"));
+            }
+            if (Utility.isPlayerCivLeader(player, request.civID()))
+            {
+                CivDAO civDAO = CivsAndTitles.getDataAccess().getCivDAO()
+                Civ civ = civDAO.get(request.civID());
+                civ.members().add(player);
+                civDAO.update(civ);
+                requestDAO.delete(requestId);
+            }
+            else
+            {
+                throw new CommandSyntaxException(CommandSyntaxException.BUILT_IN_EXCEPTIONS.literalIncorrect(), Text.literal("Insufficient Permissions"));
+            }
+        } catch (DataAccessException e) {
+            throw new RuntimeException(e);
+        }
         return 1;
     }
     public static Integer listJoinRequests(CommandContext<ServerCommandSource> ctx) {
