@@ -41,3 +41,4 @@ replay_*.log
 
 # project specific
 config/
+/src/main/database.sqbpro
