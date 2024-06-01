@@ -173,8 +173,8 @@ public abstract class SqliteDAO {
                     throw new DataAccessException("Couldn't create folder: " + FOLDER.getAbsolutePath());
                 }
                 if (!new File(FILE_LOCATION).exists()) {
-                    Files.copy(Objects.requireNonNull(getClass().getResourceAsStream("database.db")),
-                            Path.of(FILE_LOCATION));
+                    Files.copy(Objects.requireNonNull(getClass().getClassLoader()
+                                    .getResourceAsStream("database.db")), Path.of(FILE_LOCATION));
                 }
                 databaseCreated = true;
             } catch (Exception e) {

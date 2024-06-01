@@ -35,7 +35,7 @@ public class TitleCommands {
     public static Integer listTitles(CommandContext<ServerCommandSource> ctx) {
         ctx.getSource().sendFeedback(()-> Text.literal("List titles"), false);
         try {
-           Collection<Title> titles = CivsAndTitles.getDataAccess().getTitleDAO().getVisible();
+           Collection<Title> titles = CivsAndTitles.getDataAccess().getTitleDAO().getAll();
            for(Title title: titles)
            {
                 ctx.getSource().sendFeedback(()-> Text.literal(title.title() + "  -  " + title.description()), false);
