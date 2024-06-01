@@ -1,12 +1,8 @@
 package edu.byu.minecraft.cat.commands;
 
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.BoolArgumentType;
-import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.mojang.brigadier.tree.CommandNode;
 
 import edu.byu.minecraft.cat.CivsAndTitles;
 import edu.byu.minecraft.cat.dataaccess.CivDAO;
@@ -14,25 +10,23 @@ import edu.byu.minecraft.cat.dataaccess.CivRequestDAO;
 import edu.byu.minecraft.cat.dataaccess.DataAccessException;
 import edu.byu.minecraft.cat.model.Civ;
 import edu.byu.minecraft.cat.model.CivRequest;
+import edu.byu.minecraft.cat.Utility;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.CommandManager.RegistrationEnvironment;
 import net.minecraft.server.command.ServerCommandSource;
 
 import static net.minecraft.server.command.CommandManager.*;
+
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 
-
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.TreeSet;
-import java.util.UUID;
 public class CivCommands {
     /***
      * Sets up all of the commands in this class
-     * @param dispatcher
-     * @param registryAccess
-     * @param environment
+     * @param dispatcher the dispatcher
+     * @param registryAccess the registry access
+     * @param environment the environment
      */
     public static void registerCommands(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registryAccess, CommandManager.RegistrationEnvironment environment) {
         dispatcher.register(literal("civ").requires(ServerCommandSource::isExecutedByPlayer)
@@ -61,10 +55,44 @@ public class CivCommands {
             ctx.getSource().sendFeedback(()->Text.literal("Unable to access the database. Try again later."), false);
             return 0;
         }
-        // Check that there doesn't already exist a civ or civ request with the given name
-        // TODO: Put in get by name
 
-        CivRequest request = new CivRequest(0)
+        // Checks that the source is a player (Can't be run by the console)
+        if (!ctx.getSource().isExecutedByPlayer()) {
+            ctx.getSource().sendFeedback(()->Text.literal("This command can only be executed by a player"), false);
+            return 0;
+        }
+
+        // Check that there doesn't already exist a civ or civ request with the given name
+        TreeSet<Civ> civs;
+        TreeSet<CivRequest> requests;
+        try {
+            civs = (TreeSet<Civ>) civDAO.getAll();
+            requests = (TreeSet<CivRequest>) civRequestDAO.getAll();
+        } catch (DataAccessException e) {
+            ctx.getSource().sendFeedback(()->Text.literal("Unable to access the database. Try again later."), false);
+            return 0;
+        }
+        for (Civ civ : civs) {
+            if (civName.equalsIgnoreCase(civ.name())) {
+                ctx.getSource().sendFeedback(()->Text.literal("A civ with the name " + civName + " already exists."), false);
+            }
+        }
+        for (CivRequest request : requests) {
+            if (civName.equalsIgnoreCase(request.name())) {
+                ctx.getSource().sendFeedback(()->Text.literal("A civ with the name " + civName + " already exists."), false);
+            }
+        }
+
+        ServerPlayerEntity player = ctx.getSource().getPlayer();
+
+        CivRequest request = new CivRequest(0, Utility.getTime(), player.getUuid(), civName, Utility.getPlayerLocation(player));
+        try {
+            int id = civRequestDAO.insert(request);
+            ctx.getSource().sendFeedback(()->Text.literal("Creating a new civ request for " + civName + "with ID" + id), false);
+        } catch (DataAccessException e) {
+            ctx.getSource().sendFeedback(()->Text.literal("Unable to access the database. Try again later."), false);
+            return 0;
+        }
 
         ctx.getSource().sendFeedback(()->Text.literal("Creating Civ " + civName), false);
         return 1;
