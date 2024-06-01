@@ -55,7 +55,7 @@ public class CivLeaderCommands {
 
     public static Integer respondJoinRequest(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
         Integer requestId = ctx.getArgument("requestId", Integer.class);
-        boolean accept = ctx.getArgument("accept", Boolean.class);]
+        boolean accept = ctx.getArgument("accept", Boolean.class);
         UUID player = ctx.getSource().getPlayer().getUuid();
         ctx.getSource().sendFeedback(()-> Text.literal("Response to request  " + requestId + " "+ accept), false);
         JoinRequest request = null;
@@ -69,7 +69,7 @@ public class CivLeaderCommands {
             }
             if (Utility.isPlayerCivLeader(player, request.civID()))
             {
-                CivDAO civDAO = CivsAndTitles.getDataAccess().getCivDAO()
+                CivDAO civDAO = CivsAndTitles.getDataAccess().getCivDAO();
                 Civ civ = civDAO.get(request.civID());
                 civ.members().add(player);
                 civDAO.update(civ);
