@@ -2,6 +2,7 @@ package edu.byu.minecraft.cat.dataaccess.sqlite;
 
 import edu.byu.minecraft.cat.CivsAndTitles;
 import edu.byu.minecraft.cat.dataaccess.DataAccessException;
+import edu.byu.minecraft.cat.model.Location;
 import net.minecraft.util.Identifier;
 
 import java.io.File;
@@ -141,6 +142,22 @@ public abstract class SqliteDAO {
      */
     protected Set<UUID> stringToSet(String str) {
         return Arrays.stream(str.split(SEPARATOR)).map(UUID::fromString).collect(Collectors.toCollection(HashSet::new));
+    }
+
+    /**
+     * Parses a location from a result set
+     *
+     * @param rs result set to get location data from
+     * @return a location with data from the result set
+     * @throws SQLException if the table is not set up to use the same column names
+     */
+    protected Location parseLocation(ResultSet rs) throws SQLException {
+        return new Location(rs.getInt("xCoord"),
+                rs.getInt("yCoord"),
+                rs.getInt("zCoord"),
+                Identifier.tryParse(rs.getString("dimension")),
+                rs.getFloat("direction"),
+                rs.getFloat("tilt"));
     }
 
 
