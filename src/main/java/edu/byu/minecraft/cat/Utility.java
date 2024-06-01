@@ -1,11 +1,14 @@
 package edu.byu.minecraft.cat;
 
+import com.mojang.brigadier.context.CommandContext;
 import edu.byu.minecraft.cat.dataaccess.DataAccessException;
 import edu.byu.minecraft.cat.model.Civ;
 import edu.byu.minecraft.cat.model.Player;
 
 import edu.byu.minecraft.cat.model.Location;
+import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -76,5 +79,24 @@ public class Utility {
     public static boolean isPlayerCivLeader(UUID uuid, Integer civId) throws DataAccessException {
         Civ civ= CivsAndTitles.getDataAccess().getCivDAO().get(civId);
         return civ.leaders().contains(uuid);
+    }
+
+    /**
+     * A simple wrapper function that prints a message to a command executor
+     * @param ctx
+     * @param message
+     * @param broadCastToOps
+     */
+    public static void printFeedback(CommandContext<ServerCommandSource> ctx, String message, boolean broadCastToOps) {
+        ctx.getSource().sendFeedback(()-> Text.literal("This command can only be executed by a player"), false);
+    }
+
+    /**
+     * A simple wrapper function that prints a message to a command executor
+     * @param ctx
+     * @param message
+     */
+    public static void printFeedback(CommandContext<ServerCommandSource> ctx, String message) {
+        printFeedback(ctx, message, false);
     }
 }
