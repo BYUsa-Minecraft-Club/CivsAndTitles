@@ -57,6 +57,8 @@ class SqliteBuildDAOTest {
         Build inserted = withId(id, library);
         Build found = dao.get(id);
         Assertions.assertEquals(inserted, found);
+
+        Assertions.assertNull(dao.get(id + 1));
     }
 
     @Test
