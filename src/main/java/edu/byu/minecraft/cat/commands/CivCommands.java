@@ -11,6 +11,7 @@ import edu.byu.minecraft.cat.dataaccess.DataAccessException;
 import edu.byu.minecraft.cat.model.Civ;
 import edu.byu.minecraft.cat.model.CivRequest;
 import edu.byu.minecraft.cat.Utility;
+import jdk.jshell.execution.Util;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -40,8 +41,9 @@ public class CivCommands {
     }
 
     /***
-     * Allows a player to create a civ.
-     * @param ctx the context in which the command was created
+     * Creates a request to create a civ
+     * It will fail if run by the console or if a civ or civ request already exists
+     * @param ctx the context in which the command was run
      * @return 1 upon a success
      */
     public static Integer createCiv(CommandContext<ServerCommandSource> ctx) {
@@ -98,14 +100,78 @@ public class CivCommands {
         return 1;
     }
 
+    /***
+     * Creates a request to join a civ
+     * Will fail if run the console, if the civ does not exist, if the player already requested to join the civ, or if the player is part of the civ
+     * @param ctx the context in which the command was run
+     * @return 1 upon a success
+     */
     public static Integer joinCiv(CommandContext<ServerCommandSource> ctx) {
         String civName = ctx.getArgument("civName", String.class);
+
+        // Checks that the source is a player (Can't be run by the console)
+        if (!ctx.getSource().isExecutedByPlayer()) {
+                Utility.printFeedback(ctx, "This command must be executed by a player");
+            return 0;
+        }
+
+        // Gets the Civ
+        CivDAO civDAO;
+        Civ civ;
+        try {
+            civDAO = CivsAndTitles.getDataAccess().getCivDAO();
+            civ = civDAO.getForName(civName);
+        } catch (DataAccessException e) {
+            ctx.getSource().sendFeedback(()->Text.literal("Unable to access the database. Try again later."), false);
+            return 0;
+        }
+
+        // Checks that the civ exists
+        if (civ == null) {
+            Utility.printFeedback(ctx, civName + " does not exist");
+            return 0;
+        }
+
+        // Checks that the civ is active
+        if (!civ.active()) {
+            Utility.printFeedback(ctx, civName + " is not an active civ. Contact an Admin for more details");
+            return 0;
+        }
+
+        // Checks if the player is part of the civ already
+        ServerPlayerEntity player = ctx.getSource().getPlayer();
+        // TODO: Finish
+
+        // Checks if the player already requested to join the civ
+        TreeSet<CivRequest> requestsByPlayer;
+        CivRequestDAO requestDAO;
+        try {
+             requestDAO = CivsAndTitles.getDataAccess().getCivRequestDAO();
+             requestsByPlayer = (TreeSet<CivRequest>) requestDAO.getForPlayer(player.getUuid());
+        } catch (DataAccessException e) {
+            ctx.getSource().sendFeedback(()->Text.literal("Unable to access the database. Try again later."), false);
+            return 0;
+        }
+        // TODO: Finish
+
         ctx.getSource().sendFeedback(()->Text.literal("Joining Civ " + civName), false);
         return 1;
     }
+
+    /***
+     * Leaves a civ if you are a member of the civ.
+     * Will fail if you are the owner of the civ.
+     * @param ctx the context in which the command was run
+     * @return 1 upon a success
+     */
     public static Integer leaveCiv(CommandContext<ServerCommandSource> ctx) {
         String civName = ctx.getArgument("civName", String.class);
         ctx.getSource().sendFeedback(()->Text.literal("leave Civ "+ civName), false);
+        // Checks that the source is a player (Can't be run by the console)
+        if (!ctx.getSource().isExecutedByPlayer()) {
+            ctx.getSource().sendFeedback(()->Text.literal("This command can only be executed by a player"), false);
+            return 0;
+        }
         return 1;
     }
 
