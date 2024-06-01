@@ -9,11 +9,4 @@ import java.util.Collection;
  */
 public interface TitleDAO extends SimpleDAO<Title, String> {
 
-    /**
-     * Gets all titles visible to players
-     * @return all titles visible to players
-     * @throws DataAccessException If database cannot be accessed
-     */
-    Collection<Title> getVisible() throws DataAccessException;
-
 }
