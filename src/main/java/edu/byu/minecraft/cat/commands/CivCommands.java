@@ -42,9 +42,9 @@ public class CivCommands {
 
     /***
      * Creates a request to create a civ
-     * It will fail if run by the console or if a civ or civ request already exists
-     * @param ctx the context in which the command was run
-     * @return 1 upon a success
+     * It will fail if run by the console or if a civ or civ request already exists.
+     * @param ctx the context in which the command was run.
+     * @return 1 upon a success.
      */
     public static Integer createCiv(CommandContext<ServerCommandSource> ctx) {
         String civName = ctx.getArgument("civName", String.class);
@@ -161,7 +161,7 @@ public class CivCommands {
     /***
      * Leaves a civ if you are a member of the civ.
      * Will fail if you are the owner of the civ.
-     * @param ctx the context in which the command was run
+     * @param ctx the context in which the command was run.
      * @return 1 upon a success
      */
     public static Integer leaveCiv(CommandContext<ServerCommandSource> ctx) {
@@ -201,5 +201,25 @@ public class CivCommands {
         return 1;
     }
 
+    /***
+     * Cancels a civ join request.
+     * Will fail if executed by the server or if the request doesn't exist
+     * @param ctx the context in which the command was run.
+     * @return 1 upon a success.
+     */
+    public static Integer cancelRequest(CommandContext<ServerCommandSource> ctx) {
+        Utility.printFeedback(ctx, "You called the command :)");
+        return 0;
+    }
 
+    /***
+     * Lists all information about a civ, including its location, membership, status, and builds.
+     * Will fail if the civ does not exist.
+     * @param ctx the context in which the command was run.
+     * @return 1 upon a success.
+     */
+    public static Integer info(CommandContext<ServerCommandSource> ctx) {
+        Utility.printFeedback(ctx, "You called the command :)");
+        return 0;
+    }
 }
