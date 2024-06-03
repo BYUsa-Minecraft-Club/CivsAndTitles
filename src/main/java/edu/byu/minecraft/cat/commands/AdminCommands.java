@@ -37,24 +37,45 @@ public class AdminCommands {
         dispatcher.register(literal("titles").then(literal("admin").requires(ServerCommandSource::isExecutedByPlayer).requires(PermissionCheckers::isAdmin)
 
                         .then(literal("addTitle").executes(AdminCommands::addBuild))
-                .then(literal("giveTitle").then(argument("playerName", StringArgumentType.string()).suggests(SuggestionProviders::allPlayers).then(argument("title", StringArgumentType.string()).suggests(SuggestionProviders::allTitles).executes(AdminCommands::giveTitle))))
+                .then(literal("giveTitle").then(argument("playerName", StringArgumentType.string()).suggests(SuggestionProviders::allPlayers).then(argument("title", StringArgumentType.string()).suggests(SuggestionProviders::allTitles).executes(AdminCommands::bestowTitle))))
         ));
     }
 
+    private static String nukeConfirmationString = "";
+    private static long nukeConfirmationInt = 0;
+    /***
+     * Deletes a civ from the database.
+     * Must be run twice within one minute to execute.
+     * Will fail if the civ does not exist.
+     * @param ctx
+     * @return
+     */
     public static Integer nukeCiv(CommandContext<ServerCommandSource> ctx) {
         String civName = ctx.getArgument("civName", String.class);
         ctx.getSource().sendFeedback(()-> Text.literal("Nuking Civ " + civName), false);
         return 1;
     }
 
-    public static Integer giveTitle(CommandContext<ServerCommandSource> ctx) {
+    /***
+     * Gives a player a title.
+     * Will fail if the player or the title doesn't exist.
+     * @param ctx
+     * @return
+     */
+    public static Integer bestowTitle(CommandContext<ServerCommandSource> ctx) {
         String player = ctx.getArgument("playerName", String.class);
         String title = ctx.getArgument("title", String.class);
         ctx.getSource().sendFeedback(()-> Text.literal("Giving " + player + "title "+ title), false);
         return 1;
     }
 
-
+    /***
+     * Overrides the owner of a civ.
+     * Must be run twice within one minute to execute.
+     * Will fail if the civ doesn't exist or if the name given isn't a member of the civ.
+     * @param ctx
+     * @return
+     */
     public static Integer changeCivOwner(CommandContext<ServerCommandSource> ctx) {
         String player = ctx.getArgument("playerName", String.class);
         String civ = ctx.getArgument("civName", String.class);
@@ -62,12 +83,26 @@ public class AdminCommands {
         return 1;
     }
 
+    /***
+     * Removes a build from the database.
+     * Civs and players that benefited from the build will have their points reduced.
+     * Deletes the associated build scores too.
+     * Must be run twice within one minute to execute.
+     * Will fail if the build doesn't exist.
+     * @param ctx
+     * @return
+     */
     public static Integer deleteBuild(CommandContext<ServerCommandSource> ctx) {
         Integer buildId = ctx.getArgument("buildId", Integer.class);
         ctx.getSource().sendFeedback(()-> Text.literal("Deleting build #" + buildId), false);
         return 1;
     }
 
+    /***
+     * Allows an admin to accept a civ request.
+     * @param ctx
+     * @return
+     */
     public static Integer respondCivRequest(CommandContext<ServerCommandSource> ctx) {
         Integer requestId = ctx.getArgument("requestId", Integer.class);
         boolean accept = ctx.getArgument("accept", Boolean.class);
@@ -76,34 +111,71 @@ public class AdminCommands {
         return 1;
     }
 
+    /***
+     * Lists all active civ requests with their IDs.
+     * @param ctx
+     * @return
+     */
     public static Integer listCivRequests(CommandContext<ServerCommandSource> ctx) {
         ctx.getSource().sendFeedback(()-> Text.literal("Listing Civ requests"), false);
         return 1;
     }
 
+    /***
+     * Modifies a build in one of the following ways:
+     * - Name
+     * - Location
+     * - Builders
+     * - Score
+     * - Civ
+     * Will fail if any of the inputs are invalid
+     * @param ctx
+     * @return
+     */
     public static Integer modifyBuild(CommandContext<ServerCommandSource> ctx) {
         Integer buildId = ctx.getArgument("buildId", Integer.class);
         ctx.getSource().sendFeedback(()-> Text.literal("Modifying build #" + buildId), false);
         return 1;
     }
 
-
+    /***
+     * Activates builds upto the build ID, making them visible to the build judges.
+     * @param ctx
+     * @return
+     */
     public static Integer toggleBuilds(CommandContext<ServerCommandSource> ctx) {
         Integer buildId = ctx.getArgument("buildId", Integer.class);
         ctx.getSource().sendFeedback(()-> Text.literal("Toggling builds up to build #" + buildId), false);
         return 1;
     }
 
-
+    /***
+     * Injects a build into the system. It bypasses the build judging system.
+     * @param ctx
+     * @return
+     */
     public static Integer addBuild(CommandContext<ServerCommandSource> ctx) {
         ctx.getSource().sendFeedback(()-> Text.literal("Adding build"), false);
         return 1;
     }
 
-
+    /***
+     * Adds a title into the system.
+     * @param ctx
+     * @return
+     */
     public static Integer addTitle(CommandContext<ServerCommandSource> ctx) {
         ctx.getSource().sendFeedback(()-> Text.literal("Adding Title"), false);
         return 1;
     }
 
+    /***
+     * Deletes a title from the system.
+     * @param ctx
+     * @return
+     */
+    public static Integer removeTitle(CommandContext<ServerCommandSource> ctx) {
+        ctx.getSource().sendFeedback(()-> Text.literal("Adding Title"), false);
+        return 1;
+    }
 }
