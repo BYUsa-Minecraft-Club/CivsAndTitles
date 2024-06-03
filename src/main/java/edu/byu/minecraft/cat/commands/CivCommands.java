@@ -207,7 +207,18 @@ public class CivCommands {
      * @param ctx the context in which the command was run.
      * @return 1 upon a success.
      */
-    public static Integer cancelRequest(CommandContext<ServerCommandSource> ctx) {
+    public static Integer cancelJoinRequest(CommandContext<ServerCommandSource> ctx) {
+        Utility.printFeedback(ctx, "You called the command :)");
+        return 0;
+    }
+
+    /***
+     * Cancels a civ create request.
+     * Will fail if executed by the server or if the request doesn't exist.
+     * @param ctx the context in which the command was run.
+     * @return 1 upon a success.
+     */
+    public static Integer cancelCreateRequest(CommandContext<ServerCommandSource> ctx) {
         Utility.printFeedback(ctx, "You called the command :)");
         return 0;
     }
@@ -219,6 +230,17 @@ public class CivCommands {
      * @return 1 upon a success.
      */
     public static Integer info(CommandContext<ServerCommandSource> ctx) {
+        Utility.printFeedback(ctx, "You called the command :)");
+        return 0;
+    }
+
+    /***
+     * Lists all civ join and civ create requests by the player.
+     * If executed by the console, it will show all active requests.
+     * @param ctx
+     * @return
+     */
+    public static Integer listRequests(CommandContext<ServerCommandSource> ctx) {
         Utility.printFeedback(ctx, "You called the command :)");
         return 0;
     }
