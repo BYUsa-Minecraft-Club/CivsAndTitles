@@ -88,7 +88,7 @@ public class Utility {
      * @param broadCastToOps
      */
     public static void printFeedback(CommandContext<ServerCommandSource> ctx, String message, boolean broadCastToOps) {
-        ctx.getSource().sendFeedback(()-> Text.literal("This command can only be executed by a player"), false);
+        ctx.getSource().sendFeedback(()-> Text.literal(message), broadCastToOps);
     }
 
     /**
