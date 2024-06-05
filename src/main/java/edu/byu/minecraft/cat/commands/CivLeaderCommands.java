@@ -1,27 +1,23 @@
 package edu.byu.minecraft.cat.commands;
 
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.Message;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.exceptions.CommandExceptionType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import edu.byu.minecraft.cat.CivsAndTitles;
-import edu.byu.minecraft.cat.Utility;
 import edu.byu.minecraft.cat.dataaccess.CivDAO;
 import edu.byu.minecraft.cat.dataaccess.DataAccessException;
 import edu.byu.minecraft.cat.dataaccess.JoinRequestDAO;
 import edu.byu.minecraft.cat.model.Civ;
 import edu.byu.minecraft.cat.model.JoinRequest;
+import edu.byu.minecraft.cat.util.CivUtilities;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.MessageCommand;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
 
-import java.util.Collection;
 import java.util.UUID;
 
 import static net.minecraft.server.command.CommandManager.argument;
@@ -67,7 +63,7 @@ public class CivLeaderCommands {
             {
                 throw new CommandSyntaxException(CommandSyntaxException.BUILT_IN_EXCEPTIONS.literalIncorrect(), Text.literal("Invalid request ID"));
             }
-            if (Utility.isPlayerCivLeader(player, request.civID()))
+            if (CivUtilities.isPlayerCivLeader(player, request.civID()))
             {
                 CivDAO civDAO = CivsAndTitles.getDataAccess().getCivDAO();
                 Civ civ = civDAO.get(request.civID());

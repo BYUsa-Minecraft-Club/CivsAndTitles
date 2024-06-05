@@ -10,8 +10,8 @@ import edu.byu.minecraft.cat.dataaccess.CivRequestDAO;
 import edu.byu.minecraft.cat.dataaccess.DataAccessException;
 import edu.byu.minecraft.cat.model.Civ;
 import edu.byu.minecraft.cat.model.CivRequest;
-import edu.byu.minecraft.cat.Utility;
-import jdk.jshell.execution.Util;
+import edu.byu.minecraft.cat.util.Utilities;
+import edu.byu.minecraft.cat.util.CommandUtilities;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -87,7 +87,7 @@ public class CivCommands {
 
         ServerPlayerEntity player = ctx.getSource().getPlayer();
 
-        CivRequest request = new CivRequest(0, Utility.getTime(), player.getUuid(), civName, Utility.getPlayerLocation(player));
+        CivRequest request = new CivRequest(0, Utilities.getTime(), player.getUuid(), civName, Utilities.getPlayerLocation(player));
         try {
             int id = civRequestDAO.insert(request);
             ctx.getSource().sendFeedback(()->Text.literal("Creating a new civ request for " + civName + "with ID" + id), false);
@@ -111,7 +111,7 @@ public class CivCommands {
 
         // Checks that the source is a player (Can't be run by the console)
         if (!ctx.getSource().isExecutedByPlayer()) {
-                Utility.printFeedback(ctx, "This command must be executed by a player");
+                CommandUtilities.printFeedback(ctx, "This command must be executed by a player");
             return 0;
         }
 
@@ -128,13 +128,13 @@ public class CivCommands {
 
         // Checks that the civ exists
         if (civ == null) {
-            Utility.printFeedback(ctx, civName + " does not exist");
+            CommandUtilities.printFeedback(ctx, civName + " does not exist");
             return 0;
         }
 
         // Checks that the civ is active
         if (!civ.active()) {
-            Utility.printFeedback(ctx, civName + " is not an active civ. Contact an Admin for more details");
+            CommandUtilities.printFeedback(ctx, civName + " is not an active civ. Contact an Admin for more details");
             return 0;
         }
 
@@ -208,7 +208,7 @@ public class CivCommands {
      * @return 1 upon a success.
      */
     public static Integer cancelJoinRequest(CommandContext<ServerCommandSource> ctx) {
-        Utility.printFeedback(ctx, "You called the command :)");
+        CommandUtilities.printFeedback(ctx, "You called the command :)");
         return 0;
     }
 
@@ -219,7 +219,7 @@ public class CivCommands {
      * @return 1 upon a success.
      */
     public static Integer cancelCreateRequest(CommandContext<ServerCommandSource> ctx) {
-        Utility.printFeedback(ctx, "You called the command :)");
+        CommandUtilities.printFeedback(ctx, "You called the command :)");
         return 0;
     }
 
@@ -230,7 +230,7 @@ public class CivCommands {
      * @return 1 upon a success.
      */
     public static Integer info(CommandContext<ServerCommandSource> ctx) {
-        Utility.printFeedback(ctx, "You called the command :)");
+        CommandUtilities.printFeedback(ctx, "You called the command :)");
         return 0;
     }
 
@@ -241,7 +241,7 @@ public class CivCommands {
      * @return
      */
     public static Integer listRequests(CommandContext<ServerCommandSource> ctx) {
-        Utility.printFeedback(ctx, "You called the command :)");
+        CommandUtilities.printFeedback(ctx, "You called the command :)");
         return 0;
     }
 }
