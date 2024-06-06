@@ -2,6 +2,7 @@ package edu.byu.minecraft.cat.dataaccess.sqlite;
 
 import edu.byu.minecraft.cat.CivsAndTitles;
 import edu.byu.minecraft.cat.dataaccess.DataAccessException;
+import edu.byu.minecraft.cat.model.BuildScore;
 import edu.byu.minecraft.cat.model.Location;
 import net.minecraft.util.Identifier;
 
@@ -12,7 +13,7 @@ import java.sql.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public abstract class SqliteDAO {
+public abstract class SqliteDAO<S> {
     private static final String SEPARATOR = " ";
 
     private static final File FOLDER = new File(String.format("config/%s", CivsAndTitles.MOD_ID));
@@ -181,6 +182,42 @@ public abstract class SqliteDAO {
                 throw new DataAccessException(e);
             }
         }
+    }
+
+    /**
+     * Parses a single row of a result set into a model object
+     *
+     * @param rs result set to retrieve row data from
+     * @return An appropriate model object
+     * @throws SQLException if column names are retrieved incorrectly or are not present
+     */
+    protected abstract S parse(ResultSet rs) throws SQLException;
+
+    /**
+     * Parses an entire result set as a single object. Should qualify as a ResultSetParser
+     *
+     * @param rs result set to retrieve data from
+     * @return An appropriate model object or null if the result set is empty
+     * @throws SQLException if thrown from parse
+     */
+    protected S parseSingle(ResultSet rs) throws SQLException {
+        if(!rs.next()) return null;
+        return parse(rs);
+    }
+
+    /**
+     * Parses an entire result set as a collection. Should qualify as a ResultSetParser
+     *
+     * @param rs result set to retrieve data from
+     * @return A collection of model objects. Can be empty if the result set is empty
+     * @throws SQLException if thrown from parse
+     */
+    protected Collection<S> parseCollection(ResultSet rs) throws SQLException {
+        Collection<S> coll = new HashSet<>();
+        while (rs.next()) {
+            coll.add(parse(rs));
+        }
+        return coll;
     }
 
 

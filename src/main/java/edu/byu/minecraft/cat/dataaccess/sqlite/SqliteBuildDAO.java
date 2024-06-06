@@ -8,7 +8,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
-public class SqliteBuildDAO extends SqliteDAO implements BuildDAO {
+public class SqliteBuildDAO extends SqliteDAO<Build> implements BuildDAO {
 
     /**
      * Constructs a new sqlite build DAO. If the database file doesn't already exist it is created
@@ -25,10 +25,7 @@ public class SqliteBuildDAO extends SqliteDAO implements BuildDAO {
      */
     @Override
     public Build get(Integer integer) throws DataAccessException {
-        return executeQuery("SELECT * FROM `BUILDS` WHERE id = ?", (rs) -> {
-            if(!rs.next()) return null;
-            return parseBuild(rs);
-        }, integer);
+        return executeQuery("SELECT * FROM `BUILDS` WHERE id = ?", this::parseSingle, integer);
     }
 
     /**
@@ -119,7 +116,7 @@ public class SqliteBuildDAO extends SqliteDAO implements BuildDAO {
         return executeQuery("SELECT * FROM `BUILDS` WHERE status = ?", this::parseCollection, status);
     }
     
-    private Build parseBuild(ResultSet rs) throws SQLException {
+    protected Build parse(ResultSet rs) throws SQLException {
         return new Build(rs.getInt("id"),
                 rs.getString("name"),
                 rs.getLong("timestamp"),
@@ -132,13 +129,5 @@ public class SqliteBuildDAO extends SqliteDAO implements BuildDAO {
                 rs.getInt("size"),
                 Build.JudgeStatus.values()[rs.getInt("status")]
         );
-    }
-
-    private Collection<Build> parseCollection(ResultSet rs) throws SQLException {
-        Collection<Build> builds = new HashSet<>();
-        while (rs.next()) {
-            builds.add(parseBuild(rs));
-        }
-        return builds;
     }
 }
