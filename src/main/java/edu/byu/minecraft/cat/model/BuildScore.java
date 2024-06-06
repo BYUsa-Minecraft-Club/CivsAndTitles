@@ -12,7 +12,7 @@ import java.util.UUID;
  * @param technical     technical score zero to five
  * @param texture       texture score zero to five
  * @param storytelling  storytelling score zero to five
- * @param thematic      thematic score zero to five. May be null if not a part of a civ
+ * @param thematic      thematic score zero to five. May be -1 if not a part of a civ
  * @param landscaping   landscaping score zero to five
  * @param detailing     detailing score zero to five
  * @param lighting      lighting score zero to five
@@ -22,5 +22,5 @@ import java.util.UUID;
  * @param comments      any comments from the build judge
  */
 public record BuildScore(int ID, int buildID, UUID judge, int functionality, int technical, int texture,
-                         int storytelling, Integer thematic, int landscaping, int detailing, int lighting, int layout,
+                         int storytelling, int thematic, int landscaping, int detailing, int lighting, int layout,
                          int discretion, int total, String comments) {}
