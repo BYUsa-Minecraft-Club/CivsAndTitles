@@ -10,17 +10,6 @@ import java.util.*;
 
 public class SqliteBuildDAO extends SqliteDAO implements BuildDAO {
 
-    ResultSetParser<Collection<Build>> collectionParser = new ResultSetParser<Collection<Build>>() {
-        @Override
-        public Collection<Build> parseResultSet(ResultSet rs) throws SQLException {
-            Collection<Build> builds = new HashSet<>();
-            while (rs.next()) {
-                builds.add(parseBuild(rs));
-            }
-            return builds;
-        }
-    };
-
     /**
      * Constructs a new sqlite build DAO. If the database file doesn't already exist it is created
      *
@@ -48,22 +37,7 @@ public class SqliteBuildDAO extends SqliteDAO implements BuildDAO {
      */
     @Override
     public Collection<Build> getAll() throws DataAccessException {
-        return executeQuery("SELECT * FROM `BUILDS`", collectionParser);
-    }
-
-    private Build parseBuild(ResultSet rs) throws SQLException {
-        return new Build(rs.getInt("id"),
-                rs.getString("name"),
-                rs.getLong("timestamp"),
-                UUID.fromString(rs.getString("submitter")),
-                parseLocation(rs),
-                rs.getInt("civID"),
-                stringToSet(rs.getString("builders")),
-                rs.getString("comments"),
-                rs.getInt("points"),
-                rs.getInt("size"),
-                Build.JudgeStatus.values()[rs.getInt("status")]
-                );
+        return executeQuery("SELECT * FROM `BUILDS`", this::parseCollection);
     }
 
     /**
@@ -112,7 +86,7 @@ public class SqliteBuildDAO extends SqliteDAO implements BuildDAO {
      */
     @Override
     public Collection<Build> getAllForCiv(int civID) throws DataAccessException {
-        return executeQuery("SELECT * FROM `BUILDS` WHERE civID = ?", collectionParser, civID);
+        return executeQuery("SELECT * FROM `BUILDS` WHERE civID = ?", this::parseCollection, civID);
     }
 
     /**
@@ -122,7 +96,7 @@ public class SqliteBuildDAO extends SqliteDAO implements BuildDAO {
      */
     @Override
     public Collection<Build> getAllForSubmitter(UUID uuid) throws DataAccessException {
-        return executeQuery("SELECT * FROM `BUILDS` WHERE submitter = ?", collectionParser, uuid);
+        return executeQuery("SELECT * FROM `BUILDS` WHERE submitter = ?", this::parseCollection, uuid);
     }
 
     /**
@@ -132,7 +106,7 @@ public class SqliteBuildDAO extends SqliteDAO implements BuildDAO {
      */
     @Override
     public Collection<Build> getAllForBuilder(UUID uuid) throws DataAccessException {
-        return executeQuery("SELECT * FROM `BUILDS` WHERE builders LIKE '%" + uuid + "%'", collectionParser);
+        return executeQuery("SELECT * FROM `BUILDS` WHERE builders LIKE '%" + uuid + "%'", this::parseCollection);
     }
 
     /**
@@ -142,6 +116,29 @@ public class SqliteBuildDAO extends SqliteDAO implements BuildDAO {
      */
     @Override
     public Collection<Build> getAllForStatus(Build.JudgeStatus status) throws DataAccessException {
-        return executeQuery("SELECT * FROM `BUILDS` WHERE status = ?", collectionParser, status);
+        return executeQuery("SELECT * FROM `BUILDS` WHERE status = ?", this::parseCollection, status);
+    }
+    
+    private Build parseBuild(ResultSet rs) throws SQLException {
+        return new Build(rs.getInt("id"),
+                rs.getString("name"),
+                rs.getLong("timestamp"),
+                UUID.fromString(rs.getString("submitter")),
+                parseLocation(rs),
+                rs.getInt("civID"),
+                stringToSet(rs.getString("builders")),
+                rs.getString("comments"),
+                rs.getInt("points"),
+                rs.getInt("size"),
+                Build.JudgeStatus.values()[rs.getInt("status")]
+        );
+    }
+
+    private Collection<Build> parseCollection(ResultSet rs) throws SQLException {
+        Collection<Build> builds = new HashSet<>();
+        while (rs.next()) {
+            builds.add(parseBuild(rs));
+        }
+        return builds;
     }
 }
