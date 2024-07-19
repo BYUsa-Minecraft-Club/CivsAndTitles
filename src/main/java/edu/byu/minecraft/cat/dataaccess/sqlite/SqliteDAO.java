@@ -112,6 +112,7 @@ public abstract class SqliteDAO<S> {
                 case Integer p -> ps.setInt(i + 1, p);
                 case Float p -> ps.setFloat(i + 1, p);
                 case Long p -> ps.setLong(i + 1, p);
+                case Boolean p -> ps.setBoolean(i + 1, p);
                 case UUID p -> ps.setString(i + 1, p.toString());
                 case Enum<?> p -> ps.setInt(i + 1, p.ordinal());
                 case Identifier p -> ps.setString(i + 1, p.toString());
@@ -142,6 +143,7 @@ public abstract class SqliteDAO<S> {
      * @return a set of UUID's
      */
     protected Set<UUID> stringToSet(String str) {
+        if(str.isBlank()) return new HashSet<>();
         return Arrays.stream(str.split(SEPARATOR)).map(UUID::fromString).collect(Collectors.toCollection(HashSet::new));
     }
 
