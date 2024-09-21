@@ -30,7 +30,7 @@ public class PermissionCheckers {
     public static boolean isBuildJudge(ServerCommandSource src) {
         UUID pl = src.getPlayer().getUuid();
         try {
-            Player player = CivsAndTitles.getDataAccess().getPlayerDAO().get(pl.toString());
+            Player player = CivsAndTitles.getDataAccess().getPlayerDAO().get(pl);
             if(player == null) {
                 return false;
             }
@@ -109,7 +109,7 @@ public class PermissionCheckers {
     public static boolean isAdmin(ServerCommandSource src) {
         UUID pl = src.getPlayer().getUuid();
         try {
-            Player player = CivsAndTitles.getDataAccess().getPlayerDAO().get(pl.toString());
+            Player player = CivsAndTitles.getDataAccess().getPlayerDAO().get(pl);
             if(player == null) {
                 return false;
             }

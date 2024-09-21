@@ -3,11 +3,12 @@ package edu.byu.minecraft.cat.dataaccess;
 import edu.byu.minecraft.cat.model.Player;
 
 import java.util.Collection;
+import java.util.UUID;
 
 /**
  * Data Access interface for players
  */
-public interface PlayerDAO extends SimpleDAO<Player, String> {
+public interface PlayerDAO extends SimpleDAO<Player, UUID> {
 
     /**
      * Gets all players with a particular role

@@ -58,7 +58,7 @@ public class TitleCommands {
 
         try {
             PlayerDAO playerDAO = CivsAndTitles.getDataAccess().getPlayerDAO();
-            Player player = playerDAO.get(entity.getUuidAsString());
+            Player player = playerDAO.get(entity.getUuid());
             Collection<UnlockedTitle> validTitle = CivsAndTitles.getDataAccess().getUnlockedTitleDAO().getAll(entity.getUuidAsString());
             if(validTitle.stream().anyMatch(ut->ut.title().equals(title)))
             {
