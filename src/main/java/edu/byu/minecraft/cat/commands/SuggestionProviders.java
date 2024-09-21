@@ -14,7 +14,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 public class SuggestionProviders {
-    public static CompletableFuture<Suggestions> allPlayers(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
+    public static CompletableFuture<Suggestions> allPlayers(CommandContext<ServerCommandSource> ignoredCtx, SuggestionsBuilder builder) {
         try {
             Stream<String> playerNames = CivsAndTitles.getDataAccess().getPlayerDAO().getAll().stream().map(Player::name);
             return suggest(filter(playerNames, builder), builder, String.class);
@@ -29,7 +29,7 @@ public class SuggestionProviders {
         return suggest(filter(playerNames, builder), builder, String.class);
     }
 
-    public static CompletableFuture<Suggestions> allCivs(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
+    public static CompletableFuture<Suggestions> allCivs(CommandContext<ServerCommandSource> ignoredCtx, SuggestionsBuilder builder) {
         try {
             Stream<String> civNames = CivsAndTitles.getDataAccess().getCivDAO().getAll().stream().map(Civ::name);
             return suggest(filter(civNames, builder), builder, String.class);
@@ -38,7 +38,7 @@ public class SuggestionProviders {
         }
     }
 
-    public static CompletableFuture<Suggestions> allBuilds(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
+    public static CompletableFuture<Suggestions> allBuilds(CommandContext<ServerCommandSource> ignoredCtx, SuggestionsBuilder builder) {
         try {
             Stream<Integer> buildIDs = CivsAndTitles.getDataAccess().getBuildDAO().getAll().stream().map(Build::ID);
             return suggest(filter(buildIDs, builder), builder, Integer.class);
@@ -131,8 +131,7 @@ public class SuggestionProviders {
         }
     }
 
-    public static CompletableFuture<Suggestions> allTitles(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
-        ServerPlayerEntity player = ctx.getSource().getPlayer();
+    public static CompletableFuture<Suggestions> allTitles(CommandContext<ServerCommandSource> ignoredCtx, SuggestionsBuilder builder) {
         try {
             Stream<String> titles = CivsAndTitles.getDataAccess().getTitleDAO().getAll().stream().map(Title::title);
             return suggest(filter(titles, builder), builder, String.class);
@@ -147,10 +146,10 @@ public class SuggestionProviders {
 
     private static <T> CompletableFuture<Suggestions> suggest(Stream<T> stream, SuggestionsBuilder builder, Class<T> type) {
         if(type == Integer.class) {
-            ((Stream<Integer>) stream).forEach(builder::suggest);
+            stream.forEach(i -> builder.suggest((int) i));
         }
         else if(type == String.class) {
-            ((Stream<String>) stream).forEach(builder::suggest);
+            stream.forEach(s -> builder.suggest((String) s));
         }
         else {
             return suggest(stream.map(Object::toString), builder, String.class);
