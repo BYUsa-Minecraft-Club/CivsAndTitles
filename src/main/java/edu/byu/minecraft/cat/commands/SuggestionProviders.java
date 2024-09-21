@@ -5,128 +5,100 @@ import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import edu.byu.minecraft.cat.CivsAndTitles;
 import edu.byu.minecraft.cat.dataaccess.DataAccessException;
-import edu.byu.minecraft.cat.model.Build;
-import edu.byu.minecraft.cat.model.Civ;
-import edu.byu.minecraft.cat.model.Title;
-import edu.byu.minecraft.cat.model.UnlockedTitle;
+import edu.byu.minecraft.cat.model.*;
+import net.minecraft.command.CommandSource;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 
-import java.util.Collection;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
 
 public class SuggestionProviders {
     public static CompletableFuture<Suggestions> allPlayers(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
-        // TODO
-        return builder.buildFuture();
+        try {
+            Stream<String> playerNames = CivsAndTitles.getDataAccess().getPlayerDAO().getAll().stream().map(Player::name);
+            return suggest(filter(playerNames, builder), builder, String.class);
+        } catch (DataAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static CompletableFuture<Suggestions> onlinePlayers(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
-        for (ServerPlayerEntity p : ctx.getSource().getServer().getPlayerManager().getPlayerList()) {
-            builder.suggest(p.getName().getString());
-        }
-        return builder.buildFuture();
+        Stream<String> playerNames = ctx.getSource().getServer().getPlayerManager().getPlayerList().stream()
+                .map(p -> p.getName().getString());
+        return suggest(filter(playerNames, builder), builder, String.class);
     }
 
     public static CompletableFuture<Suggestions> allCivs(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
         try {
-            Collection<Civ> civs = CivsAndTitles.getDataAccess().getCivDAO().getAll();
-            for(Civ civ: civs)
-            {
-                builder.suggest(civ.name());
-            }
+            Stream<String> civNames = CivsAndTitles.getDataAccess().getCivDAO().getAll().stream().map(Civ::name);
+            return suggest(filter(civNames, builder), builder, String.class);
         } catch (DataAccessException e) {
             throw new RuntimeException(e);
         }
-        return builder.buildFuture();
     }
 
     public static CompletableFuture<Suggestions> allBuilds(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
         try {
-            Collection<Build> builds = CivsAndTitles.getDataAccess().getBuildDAO().getAll();
-            for(Build build: builds)
-            {
-                builder.suggest(build.ID());
-            }
+            Stream<Integer> buildIDs = CivsAndTitles.getDataAccess().getBuildDAO().getAll().stream().map(Build::ID);
+            return suggest(filter(buildIDs, builder), builder, Integer.class);
         } catch (DataAccessException e) {
             throw new RuntimeException(e);
         }
-        return builder.buildFuture();
     }
 
     public static CompletableFuture<Suggestions> myCivs(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
         ServerPlayerEntity player = ctx.getSource().getPlayer();
         try {
-            Collection<Civ> civs = CivsAndTitles.getDataAccess().getCivDAO().getForPlayer(player.getUuid());
-            for(Civ civ: civs)
-            {
-                builder.suggest(civ.name());
-            }
+            Stream<String> civNames = CivsAndTitles.getDataAccess().getCivDAO().getForPlayer(player.getUuid()).stream().map(Civ::name);
+            return suggest(filter(civNames, builder), builder, String.class);
         } catch (DataAccessException e) {
             throw new RuntimeException(e);
         }
-        return builder.buildFuture();
     }
 
     public static CompletableFuture<Suggestions> ownedCivs(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
         ServerPlayerEntity player = ctx.getSource().getPlayer();
         try {
-            Collection<Civ> civs = CivsAndTitles.getDataAccess().getCivDAO().getForPlayer(player.getUuid());
-            for(Civ civ: civs) {
-                if(civ.owner().equals(player.getUuid())){
-                    builder.suggest(civ.name());
-                }
-            }
+            Stream<String> civNames = CivsAndTitles.getDataAccess().getCivDAO().getForPlayer(player.getUuid()).stream()
+                    .filter(civ -> civ.owner().equals(player.getUuid())).map(Civ::name);
+            return suggest(filter(civNames, builder), builder, String.class);
         } catch (DataAccessException e) {
             throw new RuntimeException(e);
         }
-        return builder.buildFuture();
     }
 
     public static CompletableFuture<Suggestions> ledCivs(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
         ServerPlayerEntity player = ctx.getSource().getPlayer();
         try {
-            Collection<Civ> civs = CivsAndTitles.getDataAccess().getCivDAO().getForPlayer(player.getUuid());
-            for(Civ civ: civs) {
-                if(civ.owner().equals(player.getUuid()) || civ.leaders().contains(player.getUuid())){
-                    builder.suggest(civ.name());
-                }
-            }
+            Stream<String> civNames = CivsAndTitles.getDataAccess().getCivDAO().getForPlayer(player.getUuid()).stream()
+                    .filter(civ -> civ.owner().equals(player.getUuid()) || civ.leaders().contains(player.getUuid()))
+                    .map(Civ::name);
+            return suggest(filter(civNames, builder), builder, String.class);
         } catch (DataAccessException e) {
             throw new RuntimeException(e);
         }
-        return builder.buildFuture();
     }
     public static CompletableFuture<Suggestions> myBuilds(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
         ServerPlayerEntity player = ctx.getSource().getPlayer();
         try {
-            Collection<Build> builds = CivsAndTitles.getDataAccess().getBuildDAO().getAllForBuilder(player.getUuid());
-            for(Build build: builds)
-            {
-                builder.suggest(build.ID());
-            }
+            Stream<Integer> buildIDs = CivsAndTitles.getDataAccess().getBuildDAO().getAllForBuilder(player.getUuid())
+                    .stream().map(Build::ID);
+            return suggest(filter(buildIDs, builder), builder, Integer.class);
         } catch (DataAccessException e) {
             throw new RuntimeException(e);
         }
-        return builder.buildFuture();
     }
 
     public static CompletableFuture<Suggestions> myBuildRequests(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
         ServerPlayerEntity player = ctx.getSource().getPlayer();
         try {
-            Collection<Build> builds = CivsAndTitles.getDataAccess().getBuildDAO().getAllForSubmitter(player.getUuid());
-            for(Build build: builds)
-            {
-                if(build.status() != Build.JudgeStatus.JUDGED)
-                {
-                    builder.suggest(build.ID());
-                }
-            }
+            Stream<Integer> buildIDs = CivsAndTitles.getDataAccess().getBuildDAO().getAllForSubmitter(player.getUuid())
+                    .stream().filter(build -> build.status() != Build.JudgeStatus.JUDGED).map(Build::ID);
+            return suggest(filter(buildIDs, builder), builder, Integer.class);
         } catch (DataAccessException e) {
             throw new RuntimeException(e);
         }
-        return builder.buildFuture();
     }
 
     public static CompletableFuture<Suggestions> myJoinRequests(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
@@ -151,30 +123,38 @@ public class SuggestionProviders {
     public static CompletableFuture<Suggestions> myTitles(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
         ServerPlayerEntity player = ctx.getSource().getPlayer();
         try {
-            Collection<UnlockedTitle> titles = CivsAndTitles.getDataAccess().getUnlockedTitleDAO().getAll(player.getUuid());
-            for(UnlockedTitle title: titles)
-            {
-                builder.suggest(title.title());
-            }
+            Stream<String> titles = CivsAndTitles.getDataAccess().getUnlockedTitleDAO().getAll(player.getUuid())
+                    .stream().map(UnlockedTitle::title);
+            return suggest(filter(titles, builder), builder, String.class);
         } catch (DataAccessException e) {
             throw new RuntimeException(e);
         }
-        return builder.buildFuture();
     }
 
     public static CompletableFuture<Suggestions> allTitles(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
         ServerPlayerEntity player = ctx.getSource().getPlayer();
         try {
-            Collection<Title> titles = CivsAndTitles.getDataAccess().getTitleDAO().getAll();
-            for(Title title: titles)
-            {
-                builder.suggest(title.title());
-            }
+            Stream<String> titles = CivsAndTitles.getDataAccess().getTitleDAO().getAll().stream().map(Title::title);
+            return suggest(filter(titles, builder), builder, String.class);
         } catch (DataAccessException e) {
             throw new RuntimeException(e);
         }
-        return builder.buildFuture();
     }
 
+    private static <T> Stream<T> filter(Stream<T> stream, SuggestionsBuilder builder) {
+        return stream.filter(s -> CommandSource.shouldSuggest(builder.getRemaining().toLowerCase(), s.toString().toLowerCase()));
+    }
 
+    private static <T> CompletableFuture<Suggestions> suggest(Stream<T> stream, SuggestionsBuilder builder, Class<T> type) {
+        if(type == Integer.class) {
+            ((Stream<Integer>) stream).forEach(builder::suggest);
+        }
+        else if(type == String.class) {
+            ((Stream<String>) stream).forEach(builder::suggest);
+        }
+        else {
+            return suggest(stream.map(Object::toString), builder, String.class);
+        }
+        return builder.buildFuture();
+    }
 }
