@@ -79,7 +79,7 @@ CREATE TABLE IF NOT EXISTS build
     comments       TEXT,
     size           INTEGER,
     points         INTEGER,
-    status         TEXT    NOT NULL CHECK (status IN ('SUBMITTER', 'BUILDER')),
+    status         TEXT    NOT NULL CHECK (status IN ('JUDGED', 'ACTIVE', 'PENDING')),
     location_id    INTEGER NOT NULL REFERENCES location (id) ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS build_player
 (
     build_id    INTEGER NOT NULL REFERENCES build (id) ON UPDATE CASCADE ON DELETE CASCADE,
     player_uuid TEXT    NOT NULL REFERENCES player (name) ON UPDATE CASCADE ON DELETE CASCADE,
-    status      TEXT    NOT NULL CHECK (status IN ('JUDGED', 'ACTIVE', 'PENDING')),
+    status      TEXT    NOT NULL CHECK (status IN ('SUBMITTER', 'BUILDER')),
     PRIMARY KEY (build_id, player_uuid, status)
 );
 
