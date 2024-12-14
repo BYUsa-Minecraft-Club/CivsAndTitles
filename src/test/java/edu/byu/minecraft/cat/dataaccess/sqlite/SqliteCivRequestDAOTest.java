@@ -2,6 +2,7 @@ package edu.byu.minecraft.cat.dataaccess.sqlite;
 
 import edu.byu.minecraft.cat.dataaccess.CivRequestDAO;
 import edu.byu.minecraft.cat.dataaccess.DataAccessException;
+import edu.byu.minecraft.cat.dataaccess.LocationDAO;
 import edu.byu.minecraft.cat.model.CivRequest;
 import edu.byu.minecraft.cat.model.Location;
 import net.minecraft.world.World;
@@ -16,22 +17,33 @@ class SqliteCivRequestDAOTest {
 
     CivRequestDAO dao;
 
-    CivRequest r1 = new CivRequest(5, System.currentTimeMillis() - 1000, UUID.randomUUID(), "Aloha",
-            new Location(782, 63, -1495, World.OVERWORLD.getValue(), 0, 0));
+    int locID;
 
-    CivRequest r2 = new CivRequest(17, System.currentTimeMillis() - 321, r1.submitter(), "Slotted Aloha",
-            new Location(-287, 251, 3281, World.NETHER.getValue(), -10.23f, 20));
+    CivRequest r1;
 
-    CivRequest r3 = new CivRequest(78, System.currentTimeMillis(), UUID.randomUUID(), "CSMA/CD",
-            new Location(0, -2, 0, World.END.getValue(), 89, -89.5f));
+    CivRequest r2;
+
+    CivRequest r3;
 
     @BeforeEach
     void setUp() throws DataAccessException {
         dao = new SqliteCivRequestDAO();
+        LocationDAO locationDAO = new SqliteLocationDAO();
+        for (Location loc : locationDAO.getAll()) {
+            locationDAO.delete(loc.id());
+        }
+
+        Location loc = new Location(0, 0, 0, 0, World.OVERWORLD.getValue(), 0f, 0f);
+        locID = locationDAO.insert(loc);
+        r1 = new CivRequest(5, "now", UUID.randomUUID(), "Aloha", locID);
+        r2 = new CivRequest(17, "1234", r1.submitter(), "Slotted Aloha", locID);
+        r3 = new CivRequest(78, "asdf", UUID.randomUUID(), "CSMA/CD", locID);
+
         Collection<CivRequest> requests = dao.getAll();
         for(CivRequest request : requests) {
             dao.delete(request.ID());
         }
+
     }
 
     @Test
@@ -93,8 +105,8 @@ class SqliteCivRequestDAOTest {
         Assertions.assertTrue(requests.contains(r1Inserted));
         Assertions.assertTrue(requests.contains(r2Inserted));
 
-        CivRequest updated = new CivRequest(r2Id, System.currentTimeMillis() + 10, UUID.randomUUID(),
-                "Chicken Colony", r3.location());
+        CivRequest updated = new CivRequest(r2Id, "later", UUID.randomUUID(),
+                "Chicken Colony", r3.locationID());
 
         dao.update(updated);
         requests = dao.getAll();
@@ -121,6 +133,6 @@ class SqliteCivRequestDAOTest {
     }
 
     private CivRequest withId(int id, CivRequest request) {
-        return new CivRequest(id, request.timestamp(), request.submitter(), request.name(), request.location());
+        return new CivRequest(id, request.requestDate(), request.submitter(), request.name(), request.locationID());
     }
 }

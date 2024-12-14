@@ -9,6 +9,6 @@ import java.util.UUID;
  * @param requestDate when the request was made
  * @param submitter   uuid of player submitting request
  * @param name        requested civ name
- * @param location    location of requested civ
+ * @param locationID  ID of location of requested civ
  */
-public record CivRequest(int ID, String requestDate, UUID submitter, String name, Location location) {}
+public record CivRequest(int ID, String requestDate, UUID submitter, String name, int locationID) {}

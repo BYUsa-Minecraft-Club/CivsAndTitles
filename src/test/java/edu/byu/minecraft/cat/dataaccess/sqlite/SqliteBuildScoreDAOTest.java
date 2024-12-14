@@ -21,11 +21,11 @@ class SqliteBuildScoreDAOTest {
 
     private UUID judge2 = UUID.randomUUID();
 
-    private BuildScore score1 = new BuildScore(0, 5, judge1, System.currentTimeMillis() * 3 / 4,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 45, "Comments");
+    private BuildScore score1 = new BuildScore(0, 5, judge1, "now",1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 45, "Comments");
 
-    private BuildScore score2 = new BuildScore(0, 8, judge1, System.currentTimeMillis() * 8 / 9, 3, 6, 9, 2, 5, 8, 1, 4, 7, 0, 35, "Meh");
+    private BuildScore score2 = new BuildScore(0, 8, judge1, "before", 3, 6, 9, 2, 5, 8, 1, 4, 7, 0, 35, "Meh");
 
-    private BuildScore score3 = new BuildScore(0, score1.buildID(), judge2, System.currentTimeMillis(), 9, 7, 5, 3, 1, 8, 6, 4, 2, 0, 1234, "");
+    private BuildScore score3 = new BuildScore(0, score1.buildID(), judge2, "later", 9, 7, 5, 3, 1, 8, 6, 4, 2, 0,1234, "");
 
 
     @BeforeEach
@@ -96,7 +96,7 @@ class SqliteBuildScoreDAOTest {
         Assertions.assertTrue(scores.contains(score1ins));
         Assertions.assertTrue(scores.contains(score2ins));
 
-        BuildScore updated = new BuildScore(id2, 19, judge2, System.currentTimeMillis() * 5 / 6,0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, "Really Bad");
+        BuildScore updated = new BuildScore(id2, 19, judge2, "eventually",0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, "Really Bad");
 
         dao.update(updated);
         scores = dao.getAll();
@@ -139,7 +139,7 @@ class SqliteBuildScoreDAOTest {
     }
 
     private BuildScore withId(int id, BuildScore score) {
-        return new BuildScore(id, score.buildID(), score.judge(), score.timestamp(), score.functionality(),
+        return new BuildScore(id, score.buildID(), score.judge(), score.judgedDate(), score.functionality(),
                 score.technical(), score.texture(), score.storytelling(), score.thematic(), score.landscaping(),
                 score.detailing(), score.lighting(), score.layout(), score.discretion(), score.total(), score.comments());
     }

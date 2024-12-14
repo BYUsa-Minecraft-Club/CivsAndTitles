@@ -45,12 +45,9 @@ public class SqliteCivRequestDAO extends SqliteDAO<CivRequest> implements CivReq
      */
     @Override
     public Integer insert(CivRequest civRequest) throws DataAccessException {
-        return executeUpdate("INSERT INTO `NEW_CIV_REQUESTS` (timestamp, requester, name, " +
-                        "xCoord, yCoord, zCoord, Dimension, tilt, direction) " +
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                civRequest.requestDate(), civRequest.submitter(), civRequest.name(), civRequest.location().x(),
-                civRequest.location().y(), civRequest.location().z(), civRequest.location().world(),
-                civRequest.location().pitch(), civRequest.location().yaw());
+        return executeUpdate("INSERT INTO `NEW_CIV_REQUESTS` (timestamp, requester, name, location_id) " +
+                        "VALUES (?, ?, ?, ?)",
+                civRequest.requestDate(), civRequest.submitter(), civRequest.name(), civRequest.locationID());
     }
 
     /**
@@ -69,11 +66,8 @@ public class SqliteCivRequestDAO extends SqliteDAO<CivRequest> implements CivReq
     @Override
     public void update(CivRequest civRequest) throws DataAccessException {
         executeUpdate("UPDATE `NEW_CIV_REQUESTS` SET timestamp = ?, requester = ?, name = ?, " +
-                        "xCoord = ?, yCoord = ?, zCoord = ?, Dimension = ?, tilt = ?, direction = ? " +
-                        "WHERE id = ?",
-                civRequest.requestDate(), civRequest.submitter(), civRequest.name(), civRequest.location().x(),
-                civRequest.location().y(), civRequest.location().z(), civRequest.location().world(),
-                civRequest.location().pitch(), civRequest.location().yaw(), civRequest.ID());
+                        "location_id = ? WHERE id = ?",
+                civRequest.requestDate(), civRequest.submitter(), civRequest.name(), civRequest.locationID(), civRequest.ID());
     }
 
     /**
@@ -98,7 +92,7 @@ public class SqliteCivRequestDAO extends SqliteDAO<CivRequest> implements CivReq
                 rs.getString("timestamp"),
                 UUID.fromString(rs.getString("requester")),
                 rs.getString("name"),
-                parseLocation(rs)
+                rs.getInt("location_id")
         );
     }
 }

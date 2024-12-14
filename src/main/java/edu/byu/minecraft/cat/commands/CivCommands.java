@@ -87,14 +87,15 @@ public class CivCommands {
 
         ServerPlayerEntity player = ctx.getSource().getPlayer();
 
-        CivRequest request = new CivRequest(0, Utilities.getTime(), player.getUuid(), civName, Utilities.getPlayerLocation(player));
-        try {
-            int id = civRequestDAO.insert(request);
-            ctx.getSource().sendFeedback(()->Text.literal("Creating a new civ request for " + civName + "with ID" + id), false);
-        } catch (DataAccessException e) {
-            ctx.getSource().sendFeedback(()->Text.literal("Unable to access the database. Try again later."), false);
-            return 0;
-        }
+        //TODO: update to new system
+//        CivRequest request = new CivRequest(0, Utilities.getTime(), player.getUuid(), civName, Utilities.getPlayerLocation(player));
+//        try {
+//            int id = civRequestDAO.insert(request);
+//            ctx.getSource().sendFeedback(()->Text.literal("Creating a new civ request for " + civName + "with ID" + id), false);
+//        } catch (DataAccessException e) {
+//            ctx.getSource().sendFeedback(()->Text.literal("Unable to access the database. Try again later."), false);
+//            return 0;
+//        }
 
         ctx.getSource().sendFeedback(()->Text.literal("Creating Civ " + civName), false);
         return 1;
