@@ -8,7 +8,7 @@ import java.util.UUID;
  * @param ID            unique ID
  * @param buildID       ID of build this score is associated with
  * @param judge         UUID of build judge player
- * @param timestamp     when the score was created
+ * @param judgedDate    when the score was created
  * @param functionality functionality score zero to ten
  * @param technical     technical score zero to five
  * @param texture       texture score zero to five
@@ -22,6 +22,6 @@ import java.util.UUID;
  * @param total         total score zero to fifty if not in a civ, or fifty-five if in a civ
  * @param comments      any comments from the build judge
  */
-public record BuildScore(int ID, int buildID, UUID judge, long timestamp, int functionality, int technical, int texture,
-                         int storytelling, int thematic, int landscaping, int detailing, int lighting, int layout,
-                         int discretion, int total, String comments) {}
+public record BuildScore(int ID, int buildID, UUID judge, String judgedDate, int functionality, int technical,
+                         int texture, int storytelling, int thematic, int landscaping, int detailing, int lighting,
+                         int layout, int discretion, int total, String comments) {}
