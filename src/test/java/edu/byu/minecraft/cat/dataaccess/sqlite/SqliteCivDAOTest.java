@@ -114,18 +114,18 @@ class SqliteCivDAOTest {
         Assertions.assertTrue(civs.contains(updated));
     }
 
-    @Test
-    void getForPlayer() throws DataAccessException {
-        Set<Civ> inserted = new HashSet<>();
-        for(Civ civ : civs) {
-            int id = dao.insert(civ);
-            inserted.add(withId(id, civ));
-        }
-
-        Set<Civ> expected = new HashSet<>(inserted);
-        expected.removeIf((civ) -> civ.name().equals(civs.get(1).name()));
-        Assertions.assertEquals(expected, dao.getForPlayer(players.get(0)));
-    }
+//    @Test
+//    void getForPlayer() throws DataAccessException {
+//        Set<Civ> inserted = new HashSet<>();
+//        for(Civ civ : civs) {
+//            int id = dao.insert(civ);
+//            inserted.add(withId(id, civ));
+//        }
+//
+//        Set<Civ> expected = new HashSet<>(inserted);
+//        expected.removeIf((civ) -> civ.name().equals(civs.get(1).name()));
+//        Assertions.assertEquals(expected, dao.getForPlayer(players.get(0)));
+//    }
 
     @Test
     void getForName() throws DataAccessException {

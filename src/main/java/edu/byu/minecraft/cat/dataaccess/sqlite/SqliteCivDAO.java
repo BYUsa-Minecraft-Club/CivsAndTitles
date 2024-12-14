@@ -103,7 +103,7 @@ public class SqliteCivDAO extends SqliteDAO<Civ> implements CivDAO {
      */
     @Override
     public Collection<Civ> getForActivity(boolean active) throws DataAccessException {
-        return executeQuery("SELECT * FROM `civ` WHERE status = ?", this::parseCollection, active);
+        return executeQuery("SELECT * FROM `civ` WHERE is_active = ?", this::parseCollection, active);
     }
 
     /**
@@ -113,7 +113,7 @@ public class SqliteCivDAO extends SqliteDAO<Civ> implements CivDAO {
      */
     @Override
     public Collection<Civ> getForIncorporation(boolean incorporated) throws DataAccessException {
-        return executeQuery("SELECT * FROM `civ` WHERE hasBorder = ?", this::parseCollection, incorporated);
+        return executeQuery("SELECT * FROM `civ` WHERE incorporated = ?", this::parseCollection, incorporated);
     }
 
     /**
@@ -148,9 +148,9 @@ public class SqliteCivDAO extends SqliteDAO<Civ> implements CivDAO {
         return new Civ(rs.getInt("id"),
                 rs.getString("name"),
                 rs.getInt("points"),
-                rs.getBoolean("hasBorder"),
-                rs.getBoolean("status"),
-                rs.getInt("locationID"),
-                rs.getString("foundedDate"));
+                rs.getBoolean("is_active"),
+                rs.getBoolean("incorporated"),
+                rs.getInt("location_id"),
+                rs.getString("founded_date"));
     }
 }
