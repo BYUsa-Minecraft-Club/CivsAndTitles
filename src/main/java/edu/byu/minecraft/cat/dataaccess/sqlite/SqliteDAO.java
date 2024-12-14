@@ -87,11 +87,13 @@ public abstract class SqliteDAO<S> {
      * @return the return value of function
      * @throws DataAccessException if something goes wrong with sql execution
      */
-    private synchronized <T> T execute(SQLFunction<T> function) throws DataAccessException {
-        try (Connection conn = DriverManager.getConnection("jdbc:sqlite:" + FILE_LOCATION)) {
-            return function.apply(conn);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
+    private <T> T execute(SQLFunction<T> function) throws DataAccessException {
+        synchronized (SqliteDAO.class) {
+            try (Connection conn = DriverManager.getConnection("jdbc:sqlite:" + FILE_LOCATION)) {
+                return function.apply(conn);
+            } catch (SQLException e) {
+                throw new DataAccessException(e);
+            }
         }
     }
 
