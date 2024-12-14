@@ -1,11 +1,11 @@
-CREATE TABLE title
+CREATE TABLE IF NOT EXISTS title
 (
     name        TEXT NOT NULL PRIMARY KEY,
     color       TEXT NOT NULL,
     description TEXT NOT NULL
 );
 
-CREATE TABLE player
+CREATE TABLE IF NOT EXISTS player
 (
     uuid          TEXT    NOT NULL PRIMARY KEY,
     username      TEXT    NOT NULL,
@@ -15,7 +15,7 @@ CREATE TABLE player
     show_rank     INTEGER NOT NULL
 );
 
-CREATE TABLE player_title
+CREATE TABLE IF NOT EXISTS player_title
 (
     player_uuid TEXT NOT NULL REFERENCES player (uuid) ON UPDATE CASCADE ON DELETE CASCADE,
     title       TEXT NOT NULL REFERENCES title (name) ON UPDATE CASCADE ON DELETE CASCADE,
@@ -23,7 +23,7 @@ CREATE TABLE player_title
     PRIMARY KEY (player_uuid, title)
 );
 
-CREATE TABLE location
+CREATE TABLE IF NOT EXISTS location
 (
     id           INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     x_coordinate INTEGER NOT NULL,
@@ -34,7 +34,7 @@ CREATE TABLE location
     pitch        REAL    NOT NULL
 );
 
-CREATE TABLE civ
+CREATE TABLE IF NOT EXISTS civ
 (
     id           INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     name         TEXT    NOT NULL UNIQUE,
@@ -45,7 +45,7 @@ CREATE TABLE civ
     founded_date TEXT
 );
 
-CREATE TABLE civ_player
+CREATE TABLE IF NOT EXISTS civ_player
 (
     civ_id      INTEGER NOT NULL REFERENCES civ (id) ON UPDATE CASCADE ON DELETE CASCADE,
     player_uuid TEXT    NOT NULL REFERENCES player (name) ON UPDATE CASCADE ON DELETE CASCADE,
@@ -53,7 +53,7 @@ CREATE TABLE civ_player
     PRIMARY KEY (civ_id, player_uuid, status)
 );
 
-CREATE TABLE new_civ_request
+CREATE TABLE IF NOT EXISTS new_civ_request
 (
     id                INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     request_date      TEXT    NOT NULL,
@@ -62,15 +62,15 @@ CREATE TABLE new_civ_request
     location_id       INTEGER NOT NULL REFERENCES location (id) ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
-CREATE TABLE join_civ_request
+CREATE TABLE IF NOT EXISTS join_civ_request
 (
     id                INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     request_date      TEXT    NOT NULL,
     requesting_player TEXT    NOT NULL REFERENCES player (name) ON UPDATE CASCADE ON DELETE CASCADE,
     civ_id            INTEGER NOT NULL REFERENCES civ (id) ON UPDATE CASCADE ON DELETE CASCADE
-)
+);
 
-CREATE TABLE build
+CREATE TABLE IF NOT EXISTS build
 (
     id             INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     civ_id         INTEGER REFERENCES civ (id) ON UPDATE CASCADE ON DELETE SET NULL,
@@ -81,17 +81,17 @@ CREATE TABLE build
     points         INTEGER,
     status         TEXT    NOT NULL CHECK (status IN ('SUBMITTER', 'BUILDER')),
     location_id    INTEGER NOT NULL REFERENCES location (id) ON UPDATE CASCADE ON DELETE RESTRICT
-)
+);
 
-CREATE TABLE build_player
+CREATE TABLE IF NOT EXISTS build_player
 (
     build_id    INTEGER NOT NULL REFERENCES build (id) ON UPDATE CASCADE ON DELETE CASCADE,
     player_uuid TEXT    NOT NULL REFERENCES player (name) ON UPDATE CASCADE ON DELETE CASCADE,
     status      TEXT    NOT NULL CHECK (status IN ('JUDGED', 'ACTIVE', 'PENDING')),
-    PRIMARY KEY (civ_id, player_uuid, status)
+    PRIMARY KEY (build_id, player_uuid, status)
 );
 
-CREATE TABLE build_score
+CREATE TABLE IF NOT EXISTS build_score
 (
     id               INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     build_id         INTEGER NOT NULL REFERENCES build (id) ON UPDATE CASCADE ON DELETE CASCADE,
@@ -109,4 +109,4 @@ CREATE TABLE build_score
     lighting         INTEGER NOT NULL,
     layout           INTEGER NOT NULL,
     judge_discretion INTEGER NOT NULL
-)
+);
