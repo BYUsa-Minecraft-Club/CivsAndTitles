@@ -39,8 +39,8 @@ CREATE TABLE IF NOT EXISTS civ
     id           INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     name         TEXT    NOT NULL UNIQUE,
     points       INTEGER NOT NULL,
-    status       INTEGER NOT NULL DEFAULT 1,
-    has_border   INTEGER          DEFAULT 0,
+    is_active    INTEGER NOT NULL DEFAULT 1,
+    incorporated INTEGER          DEFAULT 0,
     location_id  INTEGER NOT NULL REFERENCES location (id) ON UPDATE CASCADE ON DELETE RESTRICT,
     founded_date TEXT
 );
@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS civ
 CREATE TABLE IF NOT EXISTS civ_player
 (
     civ_id      INTEGER NOT NULL REFERENCES civ (id) ON UPDATE CASCADE ON DELETE CASCADE,
-    player_uuid TEXT    NOT NULL REFERENCES player (name) ON UPDATE CASCADE ON DELETE CASCADE,
+    player_uuid TEXT    NOT NULL REFERENCES player (uuid) ON UPDATE CASCADE ON DELETE CASCADE,
     status      TEXT    NOT NULL CHECK (status IN ('FOUNDER', 'OWNER', 'LEADER', 'MEMBER', 'CONTRIBUTOR')),
     PRIMARY KEY (civ_id, player_uuid, status)
 );
@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS new_civ_request
 (
     id                INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     request_date      TEXT    NOT NULL,
-    requesting_player TEXT    NOT NULL REFERENCES player (name) ON UPDATE CASCADE ON DELETE CASCADE,
+    requesting_player TEXT    NOT NULL REFERENCES player (uuid) ON UPDATE CASCADE ON DELETE CASCADE,
     name              TEXT    NOT NULL,
     location_id       INTEGER NOT NULL REFERENCES location (id) ON UPDATE CASCADE ON DELETE RESTRICT
 );
@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS join_civ_request
 (
     id                INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     request_date      TEXT    NOT NULL,
-    requesting_player TEXT    NOT NULL REFERENCES player (name) ON UPDATE CASCADE ON DELETE CASCADE,
+    requesting_player TEXT    NOT NULL REFERENCES player (uuid) ON UPDATE CASCADE ON DELETE CASCADE,
     civ_id            INTEGER NOT NULL REFERENCES civ (id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS build
 CREATE TABLE IF NOT EXISTS build_player
 (
     build_id    INTEGER NOT NULL REFERENCES build (id) ON UPDATE CASCADE ON DELETE CASCADE,
-    player_uuid TEXT    NOT NULL REFERENCES player (name) ON UPDATE CASCADE ON DELETE CASCADE,
+    player_uuid TEXT    NOT NULL REFERENCES player (uuid) ON UPDATE CASCADE ON DELETE CASCADE,
     status      TEXT    NOT NULL CHECK (status IN ('SUBMITTER', 'BUILDER')),
     PRIMARY KEY (build_id, player_uuid, status)
 );
@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS build_score
 (
     id               INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     build_id         INTEGER NOT NULL REFERENCES build (id) ON UPDATE CASCADE ON DELETE CASCADE,
-    judge            TEXT    NOT NULL REFERENCES player (name) ON UPDATE CASCADE ON DELETE SET NULL,
+    judge            TEXT    NOT NULL REFERENCES player (uuid) ON UPDATE CASCADE ON DELETE SET NULL,
     judge_date       TEXT    NOT NULL,
     comments         TEXT    NOT NULL,
     point_total      INTEGER NOT NULL,
