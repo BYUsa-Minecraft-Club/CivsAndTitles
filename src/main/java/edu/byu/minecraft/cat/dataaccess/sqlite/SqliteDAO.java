@@ -114,7 +114,7 @@ public abstract class SqliteDAO<S> {
                 case Long p -> ps.setLong(i + 1, p);
                 case Boolean p -> ps.setBoolean(i + 1, p);
                 case UUID p -> ps.setString(i + 1, p.toString());
-                case Enum<?> p -> ps.setInt(i + 1, p.ordinal());
+                case Enum<?> p -> ps.setString(i + 1, p.name());
                 case Identifier p -> ps.setString(i + 1, p.toString());
                 case null -> ps.setNull(i + 1, Types.NULL);
                 default -> throw new DataAccessException("Unexpected data type: " + param.getClass());

@@ -46,7 +46,7 @@ public class SqliteBuildDAO extends SqliteDAO<Build> implements BuildDAO {
     @Override
     public Integer insert(Build build) throws DataAccessException {
         return executeUpdate("INSERT INTO `build` (name, civ_id, submitted_date, comments, size, " +
-                        "points, status, location_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                        "points, status, location_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                 build.name(), build.civID(), build.submittedDate(), build.comments(), build.size(), build.points(),
                 build.status(), build.locationID());
     }
@@ -79,7 +79,7 @@ public class SqliteBuildDAO extends SqliteDAO<Build> implements BuildDAO {
      */
     @Override
     public Collection<Build> getAllForCiv(int civID) throws DataAccessException {
-        return executeQuery("SELECT * FROM `build` WHERE civID = ?", this::parseCollection, civID);
+        return executeQuery("SELECT * FROM `build` WHERE civ_id = ?", this::parseCollection, civID);
     }
 
     /**
@@ -121,6 +121,6 @@ public class SqliteBuildDAO extends SqliteDAO<Build> implements BuildDAO {
                 rs.getString("comments"),
                 rs.getInt("points"),
                 rs.getInt("size"),
-                Build.JudgeStatus.values()[rs.getInt("status")]);
+                Build.JudgeStatus.valueOf(rs.getString("status")));
     }
 }
