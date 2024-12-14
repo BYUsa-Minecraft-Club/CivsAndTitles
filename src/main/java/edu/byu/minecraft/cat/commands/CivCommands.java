@@ -133,7 +133,7 @@ public class CivCommands {
         }
 
         // Checks that the civ is active
-        if (!civ.active()) {
+        if (!civ.isActive()) {
             CommandUtilities.printFeedback(ctx, civName + " is not an active civ. Contact an Admin for more details");
             return 0;
         }
@@ -195,7 +195,7 @@ public class CivCommands {
             return 0;
         }
         for (Civ civ : civs) {
-            if (!civ.active()) { continue; }
+            if (!civ.isActive()) { continue; }
             ctx.getSource().sendFeedback(()->Text.literal(civ.name()), false);
         }
         return 1;

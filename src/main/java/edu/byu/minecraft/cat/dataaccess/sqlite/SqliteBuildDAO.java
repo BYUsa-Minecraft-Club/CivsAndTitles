@@ -6,7 +6,8 @@ import edu.byu.minecraft.cat.model.Build;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Collection;
+import java.util.UUID;
 
 public class SqliteBuildDAO extends SqliteDAO<Build> implements BuildDAO {
 
@@ -25,7 +26,7 @@ public class SqliteBuildDAO extends SqliteDAO<Build> implements BuildDAO {
      */
     @Override
     public Build get(Integer integer) throws DataAccessException {
-        return executeQuery("SELECT * FROM `BUILDS` WHERE id = ?", this::parseSingle, integer);
+        return executeQuery("SELECT * FROM `build` WHERE id = ?", this::parseSingle, integer);
     }
 
     /**
@@ -34,7 +35,7 @@ public class SqliteBuildDAO extends SqliteDAO<Build> implements BuildDAO {
      */
     @Override
     public Collection<Build> getAll() throws DataAccessException {
-        return executeQuery("SELECT * FROM `BUILDS`", this::parseCollection);
+        return executeQuery("SELECT * FROM `build`", this::parseCollection);
     }
 
     /**
@@ -44,12 +45,10 @@ public class SqliteBuildDAO extends SqliteDAO<Build> implements BuildDAO {
      */
     @Override
     public Integer insert(Build build) throws DataAccessException {
-        return executeUpdate("INSERT INTO `BUILDS` (name, timestamp, submitter, xCoord, yCoord, zCoord, " +
-                "dimension, tilt, direction, civID, builders, comments, points, size, status) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", build.name(), build.timestamp(),
-                build.submitter(), build.location().x(), build.location().y(), build.location().z(),
-                build.location().world(), build.location().pitch(), build.location().yaw(), build.civID(),
-                setToString(build.builders()), build.comments(), build.points(), build.size(), build.status());
+        return executeUpdate("INSERT INTO `build` (name, civ_id, submitted_date, comments, size, " +
+                        "points, status, location_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                build.name(), build.civID(), build.submittedDate(), build.comments(), build.size(), build.points(),
+                build.status(), build.locationID());
     }
 
     /**
@@ -58,7 +57,7 @@ public class SqliteBuildDAO extends SqliteDAO<Build> implements BuildDAO {
      */
     @Override
     public void delete(Integer integer) throws DataAccessException {
-        executeUpdate("DELETE FROM `BUILDS` WHERE id = ?", integer);
+        executeUpdate("DELETE FROM `build` WHERE id = ?", integer);
     }
 
     /**
@@ -67,23 +66,20 @@ public class SqliteBuildDAO extends SqliteDAO<Build> implements BuildDAO {
      */
     @Override
     public void update(Build build) throws DataAccessException {
-        executeUpdate("UPDATE `BUILDS` SET name = ?, timestamp = ?, submitter = ?, " +
-                "xCoord = ?, yCoord = ?, zCoord = ?, dimension = ?, tilt = ?, direction = ?, " +
-                "civID = ?, builders = ?, comments = ?, points = ?, size = ?, status  = ? " +
-                "WHERE id = ?", build.name(), build.timestamp(), build.submitter(),
-                build.location().x(), build.location().y(), build.location().z(), build.location().world(),
-                build.location().pitch(), build.location().yaw(), build.civID(), setToString(build.builders()),
-                build.comments(), build.points(), build.size(), build.status(), build.ID());
+        executeUpdate("UPDATE `build` SET name = ?, civ_id = ?, submitted_date = ?, comments = ?, " +
+                        "size = ?, points = ?, status = ?, location_id = ? WHERE id = ?",
+                build.name(), build.civID(), build.submittedDate(), build.comments(), build.size(), build.points(),
+                build.status(), build.locationID(), build.ID());
     }
 
     /**
-     * @param civID civ ID to find builds of
+     * @param civID civ ID to find build of
      * @return
      * @throws DataAccessException
      */
     @Override
     public Collection<Build> getAllForCiv(int civID) throws DataAccessException {
-        return executeQuery("SELECT * FROM `BUILDS` WHERE civID = ?", this::parseCollection, civID);
+        return executeQuery("SELECT * FROM `build` WHERE civID = ?", this::parseCollection, civID);
     }
 
     /**
@@ -93,7 +89,7 @@ public class SqliteBuildDAO extends SqliteDAO<Build> implements BuildDAO {
      */
     @Override
     public Collection<Build> getAllForSubmitter(UUID uuid) throws DataAccessException {
-        return executeQuery("SELECT * FROM `BUILDS` WHERE submitter = ?", this::parseCollection, uuid);
+        return executeQuery("SELECT * FROM `build` WHERE submitter = ?", this::parseCollection, uuid);
     }
 
     /**
@@ -103,31 +99,28 @@ public class SqliteBuildDAO extends SqliteDAO<Build> implements BuildDAO {
      */
     @Override
     public Collection<Build> getAllForBuilder(UUID uuid) throws DataAccessException {
-        return executeQuery("SELECT * FROM `BUILDS` WHERE builders LIKE '%" + uuid + "%'", this::parseCollection);
+        return executeQuery("SELECT * FROM `build` WHERE builders LIKE '%" + uuid + "%'", this::parseCollection);
     }
 
     /**
-     * @param status status to find builds matching
+     * @param status status to find build matching
      * @return
      * @throws DataAccessException
      */
     @Override
     public Collection<Build> getAllForStatus(Build.JudgeStatus status) throws DataAccessException {
-        return executeQuery("SELECT * FROM `BUILDS` WHERE status = ?", this::parseCollection, status);
+        return executeQuery("SELECT * FROM `build` WHERE status = ?", this::parseCollection, status);
     }
-    
+
     protected Build parse(ResultSet rs) throws SQLException {
         return new Build(rs.getInt("id"),
                 rs.getString("name"),
-                rs.getLong("timestamp"),
-                UUID.fromString(rs.getString("submitter")),
-                parseLocation(rs),
-                rs.getInt("civID"),
-                stringToSet(rs.getString("builders")),
+                rs.getString("submitted_date"),
+                rs.getInt("location_id"),
+                rs.getInt("civ_id"),
                 rs.getString("comments"),
                 rs.getInt("points"),
                 rs.getInt("size"),
-                Build.JudgeStatus.values()[rs.getInt("status")]
-        );
+                Build.JudgeStatus.values()[rs.getInt("status")]);
     }
 }

@@ -64,14 +64,16 @@ public class PermissionCheckers {
     public static boolean isCivLeader(ServerCommandSource src) {
         UUID pl = src.getPlayer().getUuid();
         try {
+
             Collection<Civ> civs = CivsAndTitles.getDataAccess().getCivDAO().getForPlayer(pl);
-            for(Civ civ: civs)
-            {
-                if(civ.leaders().contains(pl) || civ.owner().equals(pl))
-                {
-                    return true;
-                }
-            }
+            //TODO: update to new system
+//            for(Civ civ: civs)
+//            {
+//                if(civ.leaders().contains(pl) || civ.owner().equals(pl))
+//                {
+//                    return true;
+//                }
+//            }
             return false;
         } catch (DataAccessException e) {
             throw new RuntimeException(e);
@@ -88,13 +90,14 @@ public class PermissionCheckers {
         UUID pl = src.getPlayer().getUuid();
         try {
             Collection<Civ> civs = CivsAndTitles.getDataAccess().getCivDAO().getForPlayer(pl);
-            for(Civ civ: civs)
-            {
-                if(civ.owner().equals(pl))
-                {
-                    return true;
-                }
-            }
+            //TODO: update to new system
+//            for(Civ civ: civs)
+//            {
+//                if(civ.owner().equals(pl))
+//                {
+//                    return true;
+//                }
+//            }
             return false;
         } catch (DataAccessException e) {
             throw new RuntimeException(e);

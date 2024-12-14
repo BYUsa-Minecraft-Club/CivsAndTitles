@@ -65,10 +65,10 @@ public class CivLeaderCommands {
             }
             if (CivUtilities.isPlayerCivLeader(player, request.civID()))
             {
-                CivDAO civDAO = CivsAndTitles.getDataAccess().getCivDAO();
-                Civ civ = civDAO.get(request.civID());
-                civ.members().add(player);
-                civDAO.update(civ);
+//                CivDAO civDAO = CivsAndTitles.getDataAccess().getCivDAO(); TODO: Update to new system
+//                Civ civ = civDAO.get(request.civID());
+//                civ.members().add(player);
+//                civDAO.update(civ);
                 requestDAO.delete(requestId);
             }
             else

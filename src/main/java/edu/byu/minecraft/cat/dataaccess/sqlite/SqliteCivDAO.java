@@ -28,7 +28,7 @@ public class SqliteCivDAO extends SqliteDAO<Civ> implements CivDAO {
      */
     @Override
     public Civ get(Integer integer) throws DataAccessException {
-        return executeQuery("SELECT * FROM `CIVS` WHERE id = ?", this::parseSingle, integer);
+        return executeQuery("SELECT * FROM `civ` WHERE id = ?", this::parseSingle, integer);
     }
 
     /**
@@ -37,7 +37,7 @@ public class SqliteCivDAO extends SqliteDAO<Civ> implements CivDAO {
      */
     @Override
     public Collection<Civ> getAll() throws DataAccessException {
-        return executeQuery("SELECT * FROM `CIVS`", this::parseCollection);
+        return executeQuery("SELECT * FROM `civ`", this::parseCollection);
     }
 
     /**
@@ -47,13 +47,10 @@ public class SqliteCivDAO extends SqliteDAO<Civ> implements CivDAO {
      */
     @Override
     public Integer insert(Civ civ) throws DataAccessException {
-        return executeUpdate("INSERT INTO `CIVS` (name, points, hasBorder, status, founder, owner, " +
-                "leaders, contributers, members, xCoord, yCoord, zCoord, dimension, tilt, direction, foundedDate) " +
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                civ.name(), civ.numPoints(), civ.incorporated(), civ.active(), civ.founder(), civ.owner(),
-                setToString(civ.leaders()), setToString(civ.contributors()), setToString(civ.members()),
-                civ.location().x(), civ.location().y(), civ.location().z(), civ.location().world(),
-                civ.location().pitch(), civ.location().yaw(), civ.createdDate());
+        return executeUpdate("INSERT INTO `civ` (name, points, is_active, incorporated, " +
+                        "location_id, founded_date) VALUES (?, ?, ?, ?, ?, ?)",
+                civ.name(), civ.numPoints(), civ.isActive(), civ.incorporated(), 
+                civ.locationID(), civ.createdDate());
     }
 
     /**
@@ -62,7 +59,7 @@ public class SqliteCivDAO extends SqliteDAO<Civ> implements CivDAO {
      */
     @Override
     public void delete(Integer id) throws DataAccessException {
-        executeUpdate("DELETE FROM `CIVS` WHERE id = ?", id);
+        executeUpdate("DELETE FROM `civ` WHERE id = ?", id);
     }
 
     /**
@@ -71,13 +68,10 @@ public class SqliteCivDAO extends SqliteDAO<Civ> implements CivDAO {
      */
     @Override
     public void update(Civ civ) throws DataAccessException {
-        executeUpdate("UPDATE `CIVS` SET name = ?, points = ?, hasBorder = ?, status = ?, founder = ?, " +
-                        "owner = ?, leaders = ?, contributers = ?, members = ?, xCoord = ?, yCoord = ?, zCoord = ?, " +
-                        "dimension = ?, tilt = ?, direction = ?, foundedDate = ? WHERE id = ?",
-                civ.name(), civ.numPoints(), civ.incorporated(), civ.active(), civ.founder(), civ.owner(),
-                setToString(civ.leaders()), setToString(civ.contributors()), setToString(civ.members()),
-                civ.location().x(), civ.location().y(), civ.location().z(), civ.location().world(),
-                civ.location().pitch(), civ.location().yaw(), civ.createdDate(), civ.ID());
+        executeUpdate("UPDATE `civ` SET name = ?, points = ?, is_active = ?, " +
+                        "incorporated = ?, location_id = ?, founded_date = ? WHERE id = ?",
+                civ.name(), civ.numPoints(), civ.isActive(), civ.incorporated(),
+                civ.locationID(), civ.createdDate(), civ.ID());
     }
 
     /**
@@ -87,7 +81,7 @@ public class SqliteCivDAO extends SqliteDAO<Civ> implements CivDAO {
      */
     @Override
     public Collection<Civ> getForPlayer(UUID uuid) throws DataAccessException {
-        String query = String.format("SELECT * FROM `CIVS` WHERE owner = ? OR leaders LIKE '%%%1$s%%' " +
+        String query = String.format("SELECT * FROM `civ` WHERE owner = ? OR leaders LIKE '%%%1$s%%' " +
                 "OR members LIKE '%%%1$s%%' OR contributers LIKE '%%%1$s%%'", uuid);
         return executeQuery(query, this::parseCollection, uuid);
     }
@@ -99,7 +93,7 @@ public class SqliteCivDAO extends SqliteDAO<Civ> implements CivDAO {
      */
     @Override
     public Civ getForName(String name) throws DataAccessException {
-        return executeQuery("SELECT * FROM `CIVS` WHERE name = ?", this::parseSingle, name);
+        return executeQuery("SELECT * FROM `civ` WHERE name = ?", this::parseSingle, name);
     }
 
     /**
@@ -109,7 +103,7 @@ public class SqliteCivDAO extends SqliteDAO<Civ> implements CivDAO {
      */
     @Override
     public Collection<Civ> getForActivity(boolean active) throws DataAccessException {
-        return executeQuery("SELECT * FROM `CIVS` WHERE status = ?", this::parseCollection, active);
+        return executeQuery("SELECT * FROM `civ` WHERE status = ?", this::parseCollection, active);
     }
 
     /**
@@ -119,7 +113,7 @@ public class SqliteCivDAO extends SqliteDAO<Civ> implements CivDAO {
      */
     @Override
     public Collection<Civ> getForIncorporation(boolean incorporated) throws DataAccessException {
-        return executeQuery("SELECT * FROM `CIVS` WHERE hasBorder = ?", this::parseCollection, incorporated);
+        return executeQuery("SELECT * FROM `civ` WHERE hasBorder = ?", this::parseCollection, incorporated);
     }
 
     /**
@@ -129,7 +123,7 @@ public class SqliteCivDAO extends SqliteDAO<Civ> implements CivDAO {
      */
     @Override
     public Collection<Civ> getForPoints(int minPoints) throws DataAccessException {
-        return executeQuery("SELECT * FROM `CIVS` WHERE points >= ?", this::parseCollection, minPoints);
+        return executeQuery("SELECT * FROM `civ` WHERE points >= ?", this::parseCollection, minPoints);
     }
 
     /**
@@ -140,7 +134,7 @@ public class SqliteCivDAO extends SqliteDAO<Civ> implements CivDAO {
      */
     @Override
     public Collection<Civ> getForPoints(int minPoints, int maxPoints) throws DataAccessException {
-        return executeQuery("SELECT * FROM `CIVS` WHERE points >= ? AND points <= ?",
+        return executeQuery("SELECT * FROM `civ` WHERE points >= ? AND points <= ?",
                 this::parseCollection, minPoints, maxPoints);
     }
 
@@ -156,12 +150,7 @@ public class SqliteCivDAO extends SqliteDAO<Civ> implements CivDAO {
                 rs.getInt("points"),
                 rs.getBoolean("hasBorder"),
                 rs.getBoolean("status"),
-                UUID.fromString(rs.getString("founder")),
-                UUID.fromString(rs.getString("owner")),
-                stringToSet(rs.getString("leaders")),
-                stringToSet(rs.getString("contributers")),
-                stringToSet(rs.getString("members")),
-                parseLocation(rs),
+                rs.getInt("locationID"),
                 rs.getString("foundedDate"));
     }
 }

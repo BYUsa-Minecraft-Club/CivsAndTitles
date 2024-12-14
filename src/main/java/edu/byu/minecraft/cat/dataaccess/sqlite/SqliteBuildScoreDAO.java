@@ -51,7 +51,7 @@ public class SqliteBuildScoreDAO extends SqliteDAO<BuildScore> implements BuildS
         return executeUpdate("INSERT INTO `SCORES` (buildID, judge, timestamp, functionality, technical, texture, " +
                 "storytelling, thematic, terraforming, detailing, lighting, layout, judgeDiscretion, pointTotal, " +
                         "comments) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                buildScore.buildID(), buildScore.judge(), buildScore.timestamp(), buildScore.functionality(),
+                buildScore.buildID(), buildScore.judge(), buildScore.judgedDate(), buildScore.functionality(),
                 buildScore.technical(), buildScore.texture(), buildScore.storytelling(), buildScore.thematic(),
                 buildScore.landscaping(), buildScore.detailing(), buildScore.lighting(), buildScore.layout(),
                 buildScore.discretion(), buildScore.total(), buildScore.comments());
@@ -75,7 +75,7 @@ public class SqliteBuildScoreDAO extends SqliteDAO<BuildScore> implements BuildS
         executeUpdate("UPDATE `SCORES` SET buildID = ?, judge = ?, functionality = ?, timestamp = ?, " +
                         "technical = ?, texture = ?, storytelling = ?, thematic = ?, terraforming = ?, detailing = ?, " +
                         "lighting = ?, layout = ?, judgeDiscretion = ?, pointTotal = ?, comments = ? WHERE id = ?",
-                buildScore.buildID(), buildScore.judge(), buildScore.functionality(), buildScore.timestamp(),
+                buildScore.buildID(), buildScore.judge(), buildScore.functionality(), buildScore.judgedDate(),
                 buildScore.technical(), buildScore.texture(), buildScore.storytelling(), buildScore.thematic(),
                 buildScore.landscaping(), buildScore.detailing(), buildScore.lighting(), buildScore.layout(),
                 buildScore.discretion(), buildScore.total(), buildScore.comments(), buildScore.ID());
@@ -105,7 +105,7 @@ public class SqliteBuildScoreDAO extends SqliteDAO<BuildScore> implements BuildS
         return new BuildScore(rs.getInt("id"),
                 rs.getInt("buildID"),
                 UUID.fromString(rs.getString("judge")),
-                rs.getLong("timestamp"),
+                rs.getString("timestamp"),
                 rs.getInt("functionality"),
                 rs.getInt("technical"),
                 rs.getInt("texture"),

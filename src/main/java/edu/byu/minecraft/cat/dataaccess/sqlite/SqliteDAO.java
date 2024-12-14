@@ -155,12 +155,13 @@ public abstract class SqliteDAO<S> {
      * @throws SQLException if the table is not set up to use the same column names
      */
     protected Location parseLocation(ResultSet rs) throws SQLException {
-        return new Location(rs.getInt("xCoord"),
-                rs.getInt("yCoord"),
-                rs.getInt("zCoord"),
+        return new Location(rs.getInt("id"),
+                rs.getInt("x_coordinate"),
+                rs.getInt("y_coordinate"),
+                rs.getInt("z_coordinate"),
                 Identifier.tryParse(rs.getString("dimension")),
-                rs.getFloat("direction"),
-                rs.getFloat("tilt"));
+                rs.getFloat("yaw"),
+                rs.getFloat("pitch"));
     }
 
 

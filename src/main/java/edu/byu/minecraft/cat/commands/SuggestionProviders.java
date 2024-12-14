@@ -61,7 +61,8 @@ public class SuggestionProviders {
         ServerPlayerEntity player = ctx.getSource().getPlayer();
         try {
             Stream<String> civNames = CivsAndTitles.getDataAccess().getCivDAO().getForPlayer(player.getUuid()).stream()
-                    .filter(civ -> civ.owner().equals(player.getUuid())).map(Civ::name);
+                    //.filter(civ -> civ.owner().equals(player.getUuid()))      TODO: update to new system
+                    .map(Civ::name);
             return suggest(filter(civNames, builder), builder, String.class);
         } catch (DataAccessException e) {
             throw new RuntimeException(e);
@@ -72,7 +73,8 @@ public class SuggestionProviders {
         ServerPlayerEntity player = ctx.getSource().getPlayer();
         try {
             Stream<String> civNames = CivsAndTitles.getDataAccess().getCivDAO().getForPlayer(player.getUuid()).stream()
-                    .filter(civ -> civ.owner().equals(player.getUuid()) || civ.leaders().contains(player.getUuid()))
+                    //.filter(civ -> civ.owner().equals(player.getUuid()) || civ.leaders().contains(player.getUuid()))
+                    //TODO: update to new system
                     .map(Civ::name);
             return suggest(filter(civNames, builder), builder, String.class);
         } catch (DataAccessException e) {

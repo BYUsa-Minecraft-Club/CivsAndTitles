@@ -4,18 +4,18 @@ import edu.byu.minecraft.cat.model.Location;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 /**
  * Utilities that are useful in multiple contexts
  */
 public class Utilities {
     /***
-     * It calls the current time to the minute.  That's it.  Groundbreaking.
-     * @return a longer of the minute.
+     * Gets a human-readable timestamp to the current minute
+     * @return the created timestamp
      */
-    public static long getTime() {
-        LocalDateTime dt = LocalDateTime.now();
-        return dt.getMinute();
+    public static String getTime() {
+        return LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
     }
 
     /***
@@ -25,7 +25,8 @@ public class Utilities {
      */
     public static Location getPlayerLocation(ServerPlayerEntity player) {
         if (player == null) { return null; }
-        return new Location(player.getBlockX(), player.getBlockY(), player.getBlockZ(), player.getWorld().getRegistryKey().getRegistry(), player.getHeadYaw(), player.getPitch());
+        return new Location(0, player.getBlockX(), player.getBlockY(), player.getBlockZ(),
+                player.getWorld().getRegistryKey().getRegistry(), player.getHeadYaw(), player.getPitch());
     }
 
 }
