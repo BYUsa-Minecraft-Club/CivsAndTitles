@@ -2,13 +2,11 @@ package edu.byu.minecraft.cat.dataaccess.sqlite;
 
 import edu.byu.minecraft.cat.CivsAndTitles;
 import edu.byu.minecraft.cat.dataaccess.DataAccessException;
-import edu.byu.minecraft.cat.model.BuildScore;
 import edu.byu.minecraft.cat.model.Location;
 import net.minecraft.util.Identifier;
 
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.InputStream;
 import java.sql.*;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -178,8 +176,19 @@ public abstract class SqliteDAO<S> {
                     throw new DataAccessException("Couldn't create folder: " + FOLDER.getAbsolutePath());
                 }
                 if (!new File(FILE_LOCATION).exists()) {
-                    Files.copy(Objects.requireNonNull(getClass().getClassLoader()
-                                    .getResourceAsStream("database.db")), Path.of(FILE_LOCATION));
+                    try (InputStream is = getClass().getClassLoader().getResourceAsStream("create_sqlite_tables.sql")) {
+                        if(is == null) {
+                            throw new DataAccessException("Could not find required database creation resource file");
+                        }
+                        String contents = new String(is.readAllBytes());
+                        String[] split = contents.split(";");
+                        for (String createStatement : split) {
+                            createStatement = createStatement.trim();
+                            if(!createStatement.isBlank()) {
+                                executeUpdate(createStatement + ";");
+                            }
+                        }
+                    }
                 }
                 databaseCreated = true;
             } catch (Exception e) {
