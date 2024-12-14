@@ -29,7 +29,7 @@ public class SqliteBuildScoreDAO extends SqliteDAO<BuildScore> implements BuildS
      */
     @Override
     public BuildScore get(Integer integer) throws DataAccessException {
-        return executeQuery("SELECT * FROM `SCORES` WHERE id = ?", this::parseSingle, integer);
+        return executeQuery("SELECT * FROM `build_score` WHERE id = ?", this::parseSingle, integer);
     }
 
     /**
@@ -38,7 +38,7 @@ public class SqliteBuildScoreDAO extends SqliteDAO<BuildScore> implements BuildS
      */
     @Override
     public Collection<BuildScore> getAll() throws DataAccessException {
-        return executeQuery("SELECT * FROM `SCORES`", this::parseCollection);
+        return executeQuery("SELECT * FROM `build_score`", this::parseCollection);
     }
 
     /**
@@ -48,9 +48,9 @@ public class SqliteBuildScoreDAO extends SqliteDAO<BuildScore> implements BuildS
      */
     @Override
     public Integer insert(BuildScore buildScore) throws DataAccessException {
-        return executeUpdate("INSERT INTO `SCORES` (buildID, judge, timestamp, functionality, technical, texture, " +
-                "storytelling, thematic, terraforming, detailing, lighting, layout, judgeDiscretion, pointTotal, " +
-                        "comments) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        return executeUpdate("INSERT INTO `build_score` (build_id, judge, judge_date, functionality, technical, " +
+                        "texture, storytelling, thematic, terraforming, detailing, lighting, layout, judge_discretion, " +
+                        "point_total, comments) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 buildScore.buildID(), buildScore.judge(), buildScore.judgedDate(), buildScore.functionality(),
                 buildScore.technical(), buildScore.texture(), buildScore.storytelling(), buildScore.thematic(),
                 buildScore.landscaping(), buildScore.detailing(), buildScore.lighting(), buildScore.layout(),
@@ -63,7 +63,7 @@ public class SqliteBuildScoreDAO extends SqliteDAO<BuildScore> implements BuildS
      */
     @Override
     public void delete(Integer integer) throws DataAccessException {
-        executeUpdate("DELETE FROM `SCORES` WHERE id = ?", integer);
+        executeUpdate("DELETE FROM `build_score` WHERE id = ?", integer);
     }
 
     /**
@@ -72,9 +72,9 @@ public class SqliteBuildScoreDAO extends SqliteDAO<BuildScore> implements BuildS
      */
     @Override
     public void update(BuildScore buildScore) throws DataAccessException {
-        executeUpdate("UPDATE `SCORES` SET buildID = ?, judge = ?, functionality = ?, timestamp = ?, " +
+        executeUpdate("UPDATE `build_score` SET build_id = ?, judge = ?, functionality = ?, judge_date = ?, " +
                         "technical = ?, texture = ?, storytelling = ?, thematic = ?, terraforming = ?, detailing = ?, " +
-                        "lighting = ?, layout = ?, judgeDiscretion = ?, pointTotal = ?, comments = ? WHERE id = ?",
+                        "lighting = ?, layout = ?, judge_discretion = ?, point_total = ?, comments = ? WHERE id = ?",
                 buildScore.buildID(), buildScore.judge(), buildScore.functionality(), buildScore.judgedDate(),
                 buildScore.technical(), buildScore.texture(), buildScore.storytelling(), buildScore.thematic(),
                 buildScore.landscaping(), buildScore.detailing(), buildScore.lighting(), buildScore.layout(),
@@ -82,13 +82,13 @@ public class SqliteBuildScoreDAO extends SqliteDAO<BuildScore> implements BuildS
     }
 
     /**
-     * @param buildID build ID to find build scores for
+     * @param buildID build ID to find build build_score for
      * @return
      * @throws DataAccessException
      */
     @Override
     public Collection<BuildScore> getForBuild(int buildID) throws DataAccessException {
-        return executeQuery("SELECT * FROM `SCORES` WHERE buildID = ?", this::parseCollection, buildID);
+        return executeQuery("SELECT * FROM `build_score` WHERE build_id = ?", this::parseCollection, buildID);
     }
 
     /**
@@ -98,14 +98,14 @@ public class SqliteBuildScoreDAO extends SqliteDAO<BuildScore> implements BuildS
      */
     @Override
     public Collection<BuildScore> getForJudge(UUID uuid) throws DataAccessException {
-        return executeQuery("SELECT * FROM `SCORES` WHERE judge = ?", this::parseCollection, uuid);
+        return executeQuery("SELECT * FROM `build_score` WHERE judge = ?", this::parseCollection, uuid);
     }
 
     protected BuildScore parse(ResultSet rs) throws SQLException {
         return new BuildScore(rs.getInt("id"),
-                rs.getInt("buildID"),
+                rs.getInt("build_id"),
                 UUID.fromString(rs.getString("judge")),
-                rs.getString("timestamp"),
+                rs.getString("judge_date"),
                 rs.getInt("functionality"),
                 rs.getInt("technical"),
                 rs.getInt("texture"),
@@ -115,8 +115,8 @@ public class SqliteBuildScoreDAO extends SqliteDAO<BuildScore> implements BuildS
                 rs.getInt("detailing"),
                 rs.getInt("lighting"),
                 rs.getInt("layout"),
-                rs.getInt("judgeDiscretion"),
-                rs.getInt("pointTotal"),
+                rs.getInt("judge_discretion"),
+                rs.getInt("point_total"),
                 rs.getString("comments")
         );
     }
