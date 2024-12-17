@@ -3,11 +3,11 @@ package edu.byu.minecraft.cat.dataaccess.sqlite;
 import edu.byu.minecraft.cat.dataaccess.DataAccessException;
 import edu.byu.minecraft.cat.dataaccess.LocationDAO;
 import edu.byu.minecraft.cat.model.Location;
+import net.minecraft.util.Identifier;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
-import java.util.List;
 
 public class SqliteLocationDAO extends SqliteDAO<Location> implements LocationDAO {
     /**
@@ -19,13 +19,13 @@ public class SqliteLocationDAO extends SqliteDAO<Location> implements LocationDA
     }
 
     /**
-     * @param integer Unique key value to match against
+     * @param id Unique key value to match against
      * @return
      * @throws DataAccessException
      */
     @Override
-    public Location get(Integer integer) throws DataAccessException {
-        return null;
+    public Location get(Integer id) throws DataAccessException {
+        return executeQuery("SELECT * FROM location WHERE id = ?", this::parseSingle, id);
     }
 
     /**
@@ -34,7 +34,7 @@ public class SqliteLocationDAO extends SqliteDAO<Location> implements LocationDA
      */
     @Override
     public Collection<Location> getAll() throws DataAccessException {
-        return List.of();
+        return executeQuery("SELECT * FROM location", this::parseCollection);
     }
 
     /**
@@ -44,16 +44,18 @@ public class SqliteLocationDAO extends SqliteDAO<Location> implements LocationDA
      */
     @Override
     public Integer insert(Location location) throws DataAccessException {
-        return 0;
+        return executeUpdate("INSERT INTO location (x_coordinate, y_coordinate, z_coordinate, " +
+                "dimension, yaw, pitch ) VALUES (?, ?, ?, ?, ?, ?)",
+                location.x(), location.y(), location.z(), location.world(), location.yaw(), location.pitch());
     }
 
     /**
-     * @param integer unique key
+     * @param id unique key
      * @throws DataAccessException
      */
     @Override
-    public void delete(Integer integer) throws DataAccessException {
-
+    public void delete(Integer id) throws DataAccessException {
+        executeUpdate("DELETE FROM location WHERE id = ?", id);
     }
 
     /**
@@ -62,7 +64,10 @@ public class SqliteLocationDAO extends SqliteDAO<Location> implements LocationDA
      */
     @Override
     public void update(Location location) throws DataAccessException {
-
+        executeUpdate("UPDATE location SET x_coordinate = ?, y_coordinate = ?, z_coordinate = ?, " +
+                        "dimension = ?, yaw = ?, pitch = ? WHERE id = ?",
+                location.x(), location.y(), location.z(), location.world(), location.yaw(), location.pitch(),
+                location.id());
     }
 
     /**
@@ -72,6 +77,12 @@ public class SqliteLocationDAO extends SqliteDAO<Location> implements LocationDA
      */
     @Override
     protected Location parse(ResultSet rs) throws SQLException {
-        return null;
+        return new Location(rs.getInt("id"),
+                rs.getInt("x_coordinate"),
+                rs.getInt("y_coordinate"),
+                rs.getInt("z_coordinate"),
+                Identifier.tryParse(rs.getString("dimension")),
+                rs.getFloat("yaw"),
+                rs.getFloat("pitch"));
     }
 }

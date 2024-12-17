@@ -148,24 +148,6 @@ public abstract class SqliteDAO<S> {
     }
 
     /**
-     * Parses a location from a result set
-     *
-     * @param rs result set to get location data from
-     * @return a location with data from the result set
-     * @throws SQLException if the table is not set up to use the same column names
-     */
-    protected Location parseLocation(ResultSet rs) throws SQLException {
-        return new Location(rs.getInt("id"),
-                rs.getInt("x_coordinate"),
-                rs.getInt("y_coordinate"),
-                rs.getInt("z_coordinate"),
-                Identifier.tryParse(rs.getString("dimension")),
-                rs.getFloat("yaw"),
-                rs.getFloat("pitch"));
-    }
-
-
-    /**
      * Creates a new database file if it doesn't already exist
      *
      * @throws DataAccessException if file creation goes wrong
