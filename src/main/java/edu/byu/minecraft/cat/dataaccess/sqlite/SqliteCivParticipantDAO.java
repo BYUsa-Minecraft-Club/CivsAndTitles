@@ -34,7 +34,7 @@ public class SqliteCivParticipantDAO extends SqliteDAO<CivParticipantPlayer> imp
      */
     @Override
     public void delete(CivParticipantPlayer player) throws DataAccessException {
-        executeUpdate("DELETE FROM civ_player WHERE civ_id = ?, AND player_uuid = ?, AND status = ?",
+        executeUpdate("DELETE FROM civ_player WHERE civ_id = ? AND player_uuid = ? AND status = ?",
                 player.civID(), player.playerUUID(), player.status());
     }
 

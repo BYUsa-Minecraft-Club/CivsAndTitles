@@ -81,9 +81,11 @@ public class SqliteCivDAO extends SqliteDAO<Civ> implements CivDAO {
      */
     @Override
     public Collection<Civ> getForPlayer(UUID uuid) throws DataAccessException {
-        String query = String.format("SELECT * FROM `civ` WHERE owner = ? OR leaders LIKE '%%%1$s%%' " +
-                "OR members LIKE '%%%1$s%%' OR contributers LIKE '%%%1$s%%'", uuid);
-        return executeQuery(query, this::parseCollection, uuid);
+        return executeQuery("""
+                SELECT * FROM civ
+                JOIN civ_player ON civ.id = civ_player.civ_id
+                WHERE civ_player.player_uuid = ?
+                """, this::parseCollection, uuid);
     }
 
     /**

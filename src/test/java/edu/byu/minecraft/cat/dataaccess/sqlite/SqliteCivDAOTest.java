@@ -3,6 +3,7 @@ package edu.byu.minecraft.cat.dataaccess.sqlite;
 import edu.byu.minecraft.cat.dataaccess.DataAccessException;
 import edu.byu.minecraft.cat.dataaccess.LocationDAO;
 import edu.byu.minecraft.cat.model.Civ;
+import edu.byu.minecraft.cat.model.CivParticipantPlayer;
 import edu.byu.minecraft.cat.model.Location;
 import net.minecraft.world.World;
 import org.junit.jupiter.api.Assertions;
@@ -20,8 +21,6 @@ class SqliteCivDAOTest {
 
     private SqliteCivDAO dao;
 
-    private static List<UUID> players;
-
     private static List<Civ> civs;
     private static int locID;
 
@@ -33,10 +32,7 @@ class SqliteCivDAOTest {
         }
         Location loc = new Location(0, 0, 0, 0, World.OVERWORLD.getValue(), 0f, 0f);
         locID = locationDAO.insert(loc);
-        players = new ArrayList<>();
-        for(int i = 0; i < 10; i++) {
-            players.add(UUID.randomUUID());
-        }
+
         civs = new ArrayList<>();
         civs.add(new Civ(0, "Chickens R Cool", 17, true, true, locID, "now"));
         civs.add(new Civ(0, "Abandonded", 4, false, true, locID, "long ago"));
@@ -114,18 +110,27 @@ class SqliteCivDAOTest {
         Assertions.assertTrue(civs.contains(updated));
     }
 
-//    @Test
-//    void getForPlayer() throws DataAccessException {
-//        Set<Civ> inserted = new HashSet<>();
-//        for(Civ civ : civs) {
-//            int id = dao.insert(civ);
-//            inserted.add(withId(id, civ));
-//        }
-//
-//        Set<Civ> expected = new HashSet<>(inserted);
-//        expected.removeIf((civ) -> civ.name().equals(civs.get(1).name()));
-//        Assertions.assertEquals(expected, dao.getForPlayer(players.get(0)));
-//    }
+    @Test
+    void getForPlayer() throws DataAccessException {
+        SqliteCivParticipantDAO participantDAO = new SqliteCivParticipantDAO();
+        for(CivParticipantPlayer player : participantDAO.getAll()) {
+            participantDAO.delete(player);
+        }
+
+        UUID player = UUID.randomUUID();
+        Set<Civ> expected = new HashSet<>();
+        for (int i = 0; i < civs.size(); i++) {
+            Civ civ = civs.get(i);
+            int id = dao.insert(civ);
+            civ = withId(id, civ);
+            if (i != 1) {
+                participantDAO.insert(new CivParticipantPlayer(id, player, CivParticipantPlayer.Status.values()[i]));
+                expected.add(civ);
+            }
+        }
+
+        Assertions.assertEquals(expected, dao.getForPlayer(player));
+    }
 
     @Test
     void getForName() throws DataAccessException {
