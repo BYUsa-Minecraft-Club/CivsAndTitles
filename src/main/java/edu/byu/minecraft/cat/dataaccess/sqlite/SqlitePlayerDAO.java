@@ -66,7 +66,7 @@ public class SqlitePlayerDAO extends SqliteDAO<Player> implements PlayerDAO {
     @Override
     public void update(Player player) throws DataAccessException {
         executeUpdate("UPDATE player SET username = ?, points = ?, current_title = ?, " +
-                "role = ?, show_rank = ? WHERE uuid = ?" + player.uuid(), player.name(), player.points(),
+                "role = ?, show_rank = ? WHERE uuid = ?", player.name(), player.points(),
                 player.title(), player.role(), player.showRank(), player.uuid());
     }
 
