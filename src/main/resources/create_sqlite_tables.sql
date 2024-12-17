@@ -76,6 +76,7 @@ CREATE TABLE IF NOT EXISTS build
     civ_id         INTEGER REFERENCES civ (id) ON UPDATE CASCADE ON DELETE SET NULL,
     name           TEXT    NOT NULL,
     submitted_date TEXT    NOT NULL,
+    submitter      TEXT    NOT NULL,
     comments       TEXT,
     size           INTEGER,
     points         INTEGER,
@@ -83,12 +84,11 @@ CREATE TABLE IF NOT EXISTS build
     location_id    INTEGER NOT NULL REFERENCES location (id) ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
-CREATE TABLE IF NOT EXISTS build_player
+CREATE TABLE IF NOT EXISTS builder
 (
     build_id    INTEGER NOT NULL REFERENCES build (id) ON UPDATE CASCADE ON DELETE CASCADE,
     player_uuid TEXT    NOT NULL REFERENCES player (uuid) ON UPDATE CASCADE ON DELETE CASCADE,
-    status      TEXT    NOT NULL CHECK (status IN ('SUBMITTER', 'BUILDER')),
-    PRIMARY KEY (build_id, player_uuid, status)
+    PRIMARY KEY (build_id, player_uuid)
 );
 
 CREATE TABLE IF NOT EXISTS build_score

@@ -1,5 +1,7 @@
 package edu.byu.minecraft.cat.model;
 
+import java.util.UUID;
+
 /**
  * Represents a single build
  *
@@ -8,13 +10,14 @@ package edu.byu.minecraft.cat.model;
  * @param submittedDate when the build was submitted
  * @param locationID    ID of location of build
  * @param civID         ID of civ containing build, may be null
+ * @param submitter     UUID of submitting player
  * @param comments      any comments on the build, if applicable
  * @param points        number of points build has been awarded, may be null if build has not yet been judged
  * @param size          number of blocks contained in build
  * @param status        status of build judging
  */
-public record Build(int ID, String name, String submittedDate, int locationID, Integer civID, String comments,
-                    int points, int size, JudgeStatus status) {
+public record Build(int ID, String name, String submittedDate, int locationID, Integer civID, UUID submitter,
+                    String comments, int points, int size, JudgeStatus status) {
 
     /**
      * Build judging status
