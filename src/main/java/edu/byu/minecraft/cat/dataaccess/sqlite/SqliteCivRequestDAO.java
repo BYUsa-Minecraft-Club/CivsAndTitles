@@ -26,7 +26,7 @@ public class SqliteCivRequestDAO extends SqliteDAO<CivRequest> implements CivReq
      */
     @Override
     public CivRequest get(Integer id) throws DataAccessException {
-        return executeQuery("SELECT * FROM `NEW_CIV_REQUESTS` WHERE id = ?", this::parseSingle, id);
+        return executeQuery("SELECT * FROM `new_civ_request` WHERE id = ?", this::parseSingle, id);
     }
 
     /**
@@ -35,7 +35,7 @@ public class SqliteCivRequestDAO extends SqliteDAO<CivRequest> implements CivReq
      */
     @Override
     public Collection<CivRequest> getAll() throws DataAccessException {
-        return executeQuery("SELECT * FROM `NEW_CIV_REQUESTS`", this::parseCollection);
+        return executeQuery("SELECT * FROM `new_civ_request`", this::parseCollection);
     }
 
     /**
@@ -45,7 +45,7 @@ public class SqliteCivRequestDAO extends SqliteDAO<CivRequest> implements CivReq
      */
     @Override
     public Integer insert(CivRequest civRequest) throws DataAccessException {
-        return executeUpdate("INSERT INTO `NEW_CIV_REQUESTS` (timestamp, requester, name, location_id) " +
+        return executeUpdate("INSERT INTO `new_civ_request` (request_date, requesting_player, name, location_id) " +
                         "VALUES (?, ?, ?, ?)",
                 civRequest.requestDate(), civRequest.submitter(), civRequest.name(), civRequest.locationID());
     }
@@ -56,7 +56,7 @@ public class SqliteCivRequestDAO extends SqliteDAO<CivRequest> implements CivReq
      */
     @Override
     public void delete(Integer id) throws DataAccessException {
-        executeUpdate("DELETE FROM `NEW_CIV_REQUESTS` WHERE id = ?", id);
+        executeUpdate("DELETE FROM `new_civ_request` WHERE id = ?", id);
     }
 
     /**
@@ -65,7 +65,7 @@ public class SqliteCivRequestDAO extends SqliteDAO<CivRequest> implements CivReq
      */
     @Override
     public void update(CivRequest civRequest) throws DataAccessException {
-        executeUpdate("UPDATE `NEW_CIV_REQUESTS` SET timestamp = ?, requester = ?, name = ?, " +
+        executeUpdate("UPDATE `new_civ_request` SET request_date = ?, requesting_player = ?, name = ?, " +
                         "location_id = ? WHERE id = ?",
                 civRequest.requestDate(), civRequest.submitter(), civRequest.name(), civRequest.locationID(), civRequest.ID());
     }
@@ -77,7 +77,7 @@ public class SqliteCivRequestDAO extends SqliteDAO<CivRequest> implements CivReq
      */
     @Override
     public Collection<CivRequest> getForPlayer(UUID uuid) throws DataAccessException {
-        return executeQuery("SELECT * FROM `NEW_CIV_REQUESTS` WHERE requester = ?", this::parseCollection, uuid);
+        return executeQuery("SELECT * FROM `new_civ_request` WHERE requesting_player = ?", this::parseCollection, uuid);
     }
 
     /**
@@ -89,8 +89,8 @@ public class SqliteCivRequestDAO extends SqliteDAO<CivRequest> implements CivReq
     protected CivRequest parse(ResultSet rs) throws SQLException {
         return new CivRequest(
                 rs.getInt("id"),
-                rs.getString("timestamp"),
-                UUID.fromString(rs.getString("requester")),
+                rs.getString("request_date"),
+                UUID.fromString(rs.getString("requesting_player")),
                 rs.getString("name"),
                 rs.getInt("location_id")
         );
