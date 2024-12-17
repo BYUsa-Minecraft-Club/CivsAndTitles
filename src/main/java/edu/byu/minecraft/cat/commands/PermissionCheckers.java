@@ -3,6 +3,7 @@ package edu.byu.minecraft.cat.commands;
 import edu.byu.minecraft.cat.CivsAndTitles;
 import edu.byu.minecraft.cat.dataaccess.DataAccessException;
 import edu.byu.minecraft.cat.model.Civ;
+import edu.byu.minecraft.cat.model.CivParticipantPlayer;
 import edu.byu.minecraft.cat.model.Player;
 import edu.byu.minecraft.cat.model.UnlockedTitle;
 import net.minecraft.server.command.ServerCommandSource;
@@ -62,19 +63,10 @@ public class PermissionCheckers {
      * @return
      */
     public static boolean isCivLeader(ServerCommandSource src) {
-        UUID pl = src.getPlayer().getUuid();
         try {
-
-            Collection<Civ> civs = CivsAndTitles.getDataAccess().getCivDAO().getForPlayer(pl);
-            //TODO: update to new system
-//            for(Civ civ: civs)
-//            {
-//                if(civ.leaders().contains(pl) || civ.owner().equals(pl))
-//                {
-//                    return true;
-//                }
-//            }
-            return false;
+            return isCivOwner(src) || !CivsAndTitles.getDataAccess().getCivParticipantDAO()
+                    .getAllForPlayerStatus(src.getPlayer().getUuid(), CivParticipantPlayer.Status.LEADER)
+                    .isEmpty();
         } catch (DataAccessException e) {
             throw new RuntimeException(e);
         }
@@ -87,18 +79,10 @@ public class PermissionCheckers {
      * @return
      */
     public static boolean isCivOwner(ServerCommandSource src) {
-        UUID pl = src.getPlayer().getUuid();
         try {
-            Collection<Civ> civs = CivsAndTitles.getDataAccess().getCivDAO().getForPlayer(pl);
-            //TODO: update to new system
-//            for(Civ civ: civs)
-//            {
-//                if(civ.owner().equals(pl))
-//                {
-//                    return true;
-//                }
-//            }
-            return false;
+            return !CivsAndTitles.getDataAccess().getCivParticipantDAO()
+                    .getAllForPlayerStatus(src.getPlayer().getUuid(), CivParticipantPlayer.Status.OWNER)
+                    .isEmpty();
         } catch (DataAccessException e) {
             throw new RuntimeException(e);
         }

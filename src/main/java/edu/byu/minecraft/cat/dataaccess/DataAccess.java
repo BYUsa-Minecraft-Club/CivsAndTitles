@@ -12,6 +12,8 @@ public interface DataAccess {
      */
     CivDAO getCivDAO() throws DataAccessException;
 
+    CivParticipantDAO getCivParticipantDAO() throws DataAccessException;
+
 
     /**
      * Gets/Makes a build DAO for the current storage system
@@ -28,6 +30,7 @@ public interface DataAccess {
      */
     BuildScoreDAO getBuildScoreDAO() throws DataAccessException;
 
+    BuilderDAO getBuilderDAO() throws DataAccessException;
 
     /**
      * Gets/Makes a player DAO for the current storage system
@@ -68,4 +71,5 @@ public interface DataAccess {
      */
     UnlockedTitleDAO getUnlockedTitleDAO() throws DataAccessException;
 
+    LocationDAO getLocationDAO() throws DataAccessException;
 }

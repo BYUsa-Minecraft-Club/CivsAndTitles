@@ -3,8 +3,10 @@ package edu.byu.minecraft.cat.util;
 import edu.byu.minecraft.cat.CivsAndTitles;
 import edu.byu.minecraft.cat.dataaccess.DataAccessException;
 import edu.byu.minecraft.cat.model.Civ;
+import edu.byu.minecraft.cat.model.CivParticipantPlayer;
 
 import java.util.UUID;
+import java.util.function.Predicate;
 
 /**
  * Utilites specifically for dealing with civs
@@ -54,8 +56,8 @@ public class CivUtilities {
      * @throws DataAccessException
      */
     public static boolean isPlayerCivLeader(UUID uuid, Integer civId) throws DataAccessException {
-        Civ civ= CivsAndTitles.getDataAccess().getCivDAO().get(civId);
-//        return civ.leaders().contains(uuid);
-        return false; //TODO update to new system
+        var civPlayers = CivsAndTitles.getDataAccess().getCivParticipantDAO().getAllForCiv(civId);
+        return civPlayers.stream().anyMatch(cpp -> cpp.playerUUID().equals(uuid) &&
+                cpp.status() == CivParticipantPlayer.Status.OWNER || cpp.status() == CivParticipantPlayer.Status.LEADER);
     }
 }

@@ -10,7 +10,9 @@ import net.minecraft.command.CommandSource;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 
+import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 public class SuggestionProviders {
@@ -60,8 +62,15 @@ public class SuggestionProviders {
     public static CompletableFuture<Suggestions> ownedCivs(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
         ServerPlayerEntity player = ctx.getSource().getPlayer();
         try {
-            Stream<String> civNames = CivsAndTitles.getDataAccess().getCivDAO().getForPlayer(player.getUuid()).stream()
-                    //.filter(civ -> civ.owner().equals(player.getUuid()))      TODO: update to new system
+            Stream<String> civNames = CivsAndTitles.getDataAccess().getCivParticipantDAO()
+                    .getAllForPlayerStatus(player.getUuid(), CivParticipantPlayer.Status.OWNER).stream()
+                    .map(cpp -> {
+                        try {
+                            return CivsAndTitles.getDataAccess().getCivDAO().get(cpp.civID());
+                        } catch (DataAccessException e) {
+                            throw new RuntimeException(e);
+                        }
+                    })
                     .map(Civ::name);
             return suggest(filter(civNames, builder), builder, String.class);
         } catch (DataAccessException e) {
@@ -72,10 +81,18 @@ public class SuggestionProviders {
     public static CompletableFuture<Suggestions> ledCivs(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
         ServerPlayerEntity player = ctx.getSource().getPlayer();
         try {
-            Stream<String> civNames = CivsAndTitles.getDataAccess().getCivDAO().getForPlayer(player.getUuid()).stream()
-                    //.filter(civ -> civ.owner().equals(player.getUuid()) || civ.leaders().contains(player.getUuid()))
-                    //TODO: update to new system
-                    .map(Civ::name);
+            Collection<CivParticipantPlayer> ownedCivs = CivsAndTitles.getDataAccess().getCivParticipantDAO()
+                            .getAllForPlayerStatus(player.getUuid(), CivParticipantPlayer.Status.OWNER);
+            Collection<CivParticipantPlayer> ledCivs = CivsAndTitles.getDataAccess().getCivParticipantDAO()
+                    .getAllForPlayerStatus(player.getUuid(), CivParticipantPlayer.Status.LEADER);
+            Stream<String> civNames = Stream.concat(ownedCivs.stream(), ledCivs.stream())
+                    .map(cpp -> {
+                        try {
+                            return CivsAndTitles.getDataAccess().getCivDAO().get(cpp.civID());
+                        } catch (DataAccessException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }).map(Civ::name);
             return suggest(filter(civNames, builder), builder, String.class);
         } catch (DataAccessException e) {
             throw new RuntimeException(e);

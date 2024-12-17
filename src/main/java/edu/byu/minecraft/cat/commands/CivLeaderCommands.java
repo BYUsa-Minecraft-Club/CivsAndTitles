@@ -8,9 +8,11 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import edu.byu.minecraft.cat.CivsAndTitles;
 import edu.byu.minecraft.cat.dataaccess.CivDAO;
+import edu.byu.minecraft.cat.dataaccess.CivParticipantDAO;
 import edu.byu.minecraft.cat.dataaccess.DataAccessException;
 import edu.byu.minecraft.cat.dataaccess.JoinRequestDAO;
 import edu.byu.minecraft.cat.model.Civ;
+import edu.byu.minecraft.cat.model.CivParticipantPlayer;
 import edu.byu.minecraft.cat.model.JoinRequest;
 import edu.byu.minecraft.cat.util.CivUtilities;
 import net.minecraft.command.CommandRegistryAccess;
@@ -65,10 +67,11 @@ public class CivLeaderCommands {
             }
             if (CivUtilities.isPlayerCivLeader(player, request.civID()))
             {
-//                CivDAO civDAO = CivsAndTitles.getDataAccess().getCivDAO(); TODO: Update to new system
-//                Civ civ = civDAO.get(request.civID());
-//                civ.members().add(player);
-//                civDAO.update(civ);
+                if(accept) {
+                    CivParticipantPlayer civParticipant = new CivParticipantPlayer(request.civID(), request.requester(),
+                            CivParticipantPlayer.Status.MEMBER);
+                    CivsAndTitles.getDataAccess().getCivParticipantDAO().insert(civParticipant);
+                }
                 requestDAO.delete(requestId);
             }
             else
