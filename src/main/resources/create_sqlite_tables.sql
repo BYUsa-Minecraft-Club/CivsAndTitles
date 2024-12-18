@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS player_title
 (
     player_uuid TEXT NOT NULL REFERENCES player (uuid) ON UPDATE CASCADE ON DELETE CASCADE,
     title       TEXT NOT NULL REFERENCES title (name) ON UPDATE CASCADE ON DELETE CASCADE,
-    dateEarned  TEXT,
+    date_earned  TEXT,
     PRIMARY KEY (player_uuid, title)
 );
 
