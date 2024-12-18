@@ -10,6 +10,7 @@ import edu.byu.minecraft.cat.dataaccess.CivRequestDAO;
 import edu.byu.minecraft.cat.dataaccess.DataAccessException;
 import edu.byu.minecraft.cat.model.Civ;
 import edu.byu.minecraft.cat.model.CivRequest;
+import edu.byu.minecraft.cat.model.JoinRequest;
 import edu.byu.minecraft.cat.model.Location;
 import edu.byu.minecraft.cat.util.Utilities;
 import edu.byu.minecraft.cat.util.CommandUtilities;
@@ -22,6 +23,7 @@ import static net.minecraft.server.command.CommandManager.*;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 
+import java.util.Collection;
 import java.util.TreeSet;
 public class CivCommands {
     /***
@@ -66,11 +68,11 @@ public class CivCommands {
         }
 
         // Check that there doesn't already exist a civ or civ request with the given name
-        TreeSet<Civ> civs;
-        TreeSet<CivRequest> requests;
+        Collection<Civ> civs;
+        Collection<CivRequest> requests;
         try {
-            civs = (TreeSet<Civ>) civDAO.getAll();
-            requests = (TreeSet<CivRequest>) civRequestDAO.getAll();
+            civs = civDAO.getAll();
+            requests = civRequestDAO.getAll();
         } catch (DataAccessException e) {
             ctx.getSource().sendFeedback(()->Text.literal("Unable to access the database. Try again later."), false);
             return 0;
@@ -147,18 +149,25 @@ public class CivCommands {
         // TODO: Finish
 
         // Checks if the player already requested to join the civ
-        TreeSet<CivRequest> requestsByPlayer;
+        Collection<CivRequest> requestsByPlayer;
         CivRequestDAO requestDAO;
         try {
              requestDAO = CivsAndTitles.getDataAccess().getCivRequestDAO();
-             requestsByPlayer = (TreeSet<CivRequest>) requestDAO.getForPlayer(player.getUuid());
+             requestsByPlayer = requestDAO.getForPlayer(player.getUuid());
         } catch (DataAccessException e) {
             ctx.getSource().sendFeedback(()->Text.literal("Unable to access the database. Try again later."), false);
             return 0;
         }
         // TODO: Finish
+        try {
+            CivsAndTitles.getDataAccess().getJoinRequestDAO().insert(new JoinRequest(0, Utilities.getTime(),
+                    player.getUuid(), civ.ID()));
+        } catch (DataAccessException e) {
+            ctx.getSource().sendFeedback(()->Text.literal("Unable to access the database. Try again later."), false);
+            return 0;
+        }
 
-        ctx.getSource().sendFeedback(()->Text.literal("Joining Civ " + civName), false);
+        ctx.getSource().sendFeedback(()->Text.literal("Requesting to join civ " + civName), false);
         return 1;
     }
 
@@ -186,10 +195,10 @@ public class CivCommands {
      */
     public static Integer listCivs(CommandContext<ServerCommandSource> ctx) {
         CivDAO civDAO;
-        TreeSet<Civ> civs;
+        Collection<Civ> civs;
         try {
             civDAO = CivsAndTitles.getDataAccess().getCivDAO();
-            civs = (TreeSet<Civ>)civDAO.getAll();
+            civs = civDAO.getAll();
         } catch (DataAccessException e) {
             ctx.getSource().sendFeedback(()->Text.literal("Unable to access the database. Try again later."), false);
             return 0;
