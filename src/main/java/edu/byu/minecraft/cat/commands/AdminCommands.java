@@ -5,10 +5,18 @@ import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import edu.byu.minecraft.cat.CivsAndTitles;
+import edu.byu.minecraft.cat.dataaccess.DataAccessException;
+import edu.byu.minecraft.cat.model.Civ;
+import edu.byu.minecraft.cat.model.CivParticipantPlayer;
+import edu.byu.minecraft.cat.model.CivRequest;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
+
+import java.util.Optional;
+import java.util.stream.Stream;
 
 import static net.minecraft.server.command.CommandManager.argument;
 import static net.minecraft.server.command.CommandManager.literal;
@@ -23,7 +31,8 @@ public class AdminCommands {
                  .then(literal("respondCivRequests")
                         .then(argument("requestId", IntegerArgumentType.integer(1)).suggests(SuggestionProviders::myJoinRequests).then(argument("accept", BoolArgumentType.bool()).executes(AdminCommands::respondCivRequest))))
                 .then(literal("listCivRequests").executes(AdminCommands::listCivRequests))
-
+                .then(literal("approve")
+                        .then(argument("civName", StringArgumentType.string()).suggests(SuggestionProviders::allRequestedCivs).executes(AdminCommands::approveCiv)))
             ));
         dispatcher.register(literal("build").then(literal("admin").requires(ServerCommandSource::isExecutedByPlayer).requires(PermissionCheckers::isAdmin)
                 .then(literal("toggleBuilds")
@@ -39,6 +48,32 @@ public class AdminCommands {
                         .then(literal("addTitle").executes(AdminCommands::addBuild))
                 .then(literal("giveTitle").then(argument("playerName", StringArgumentType.string()).suggests(SuggestionProviders::allPlayers).then(argument("title", StringArgumentType.string()).suggests(SuggestionProviders::allTitles).executes(AdminCommands::bestowTitle))))
         ));
+    }
+
+    private static Integer approveCiv(CommandContext<ServerCommandSource> ctx) {
+        String civName = ctx.getArgument("civName", String.class);
+        try {
+            Optional<CivRequest> opRequest = CivsAndTitles.getDataAccess().getCivRequestDAO().getAll().stream()
+                    .filter(r -> r.name().equals(civName)).findAny();
+            if(opRequest.isEmpty()) {
+                ctx.getSource().sendFeedback(()->Text.literal("No civ request with that name"), false);
+                return -1;
+            }
+            else {
+                CivRequest request = opRequest.get();
+                Civ approvedCiv = new Civ(0, request.name(), 0, true, true, request.locationID(), request.requestDate());
+                int civID = CivsAndTitles.getDataAccess().getCivDAO().insert(approvedCiv);
+                CivsAndTitles.getDataAccess().getCivParticipantDAO().insert(new CivParticipantPlayer(civID,
+                        request.submitter(), CivParticipantPlayer.Status.FOUNDER));
+                CivsAndTitles.getDataAccess().getCivParticipantDAO().insert(new CivParticipantPlayer(civID,
+                        request.submitter(), CivParticipantPlayer.Status.OWNER));
+                CivsAndTitles.getDataAccess().getCivRequestDAO().delete(request.ID());
+                return 1;
+            }
+        } catch (DataAccessException e) {
+            ctx.getSource().sendFeedback(()->Text.literal("Unable to access the database. Try again later."), false);
+            return 0;
+        }
     }
 
     private static String nukeConfirmationString = "";

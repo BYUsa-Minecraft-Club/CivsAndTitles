@@ -40,6 +40,15 @@ public class SuggestionProviders {
         }
     }
 
+    public static CompletableFuture<Suggestions> allRequestedCivs(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
+        try {
+            Stream<String> civNames = CivsAndTitles.getDataAccess().getCivRequestDAO().getAll().stream().map(CivRequest::name);
+            return suggest(filter(civNames, builder), builder, String.class);
+        } catch (DataAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static CompletableFuture<Suggestions> allBuilds(CommandContext<ServerCommandSource> ignoredCtx, SuggestionsBuilder builder) {
         try {
             Stream<Integer> buildIDs = CivsAndTitles.getDataAccess().getBuildDAO().getAll().stream().map(Build::ID);
