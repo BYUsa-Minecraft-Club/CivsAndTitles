@@ -10,4 +10,4 @@ import java.util.UUID;
  * @param requester   UUID of requesting player
  * @param civID       civ player is requesting to join
  */
-public record JoinRequest(int ID, long requestDate, UUID requester, int civID) {}
+public record JoinRequest(int ID, String requestDate, UUID requester, int civID) {}
