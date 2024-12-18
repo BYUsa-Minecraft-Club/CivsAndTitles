@@ -113,7 +113,7 @@ public class SqlitePlayerDAO extends SqliteDAO<Player> implements PlayerDAO {
                 UUID.fromString(rs.getString("uuid")),
                 rs.getString("username"),
                 rs.getInt("points"),
-                rs.getString("title"),
+                rs.getString("current_title"),
                 Player.Role.valueOf(rs.getString("role")),
                 rs.getBoolean("show_rank")
         );
