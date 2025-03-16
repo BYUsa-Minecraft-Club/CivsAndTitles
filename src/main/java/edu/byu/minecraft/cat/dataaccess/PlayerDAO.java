@@ -29,6 +29,14 @@ public interface PlayerDAO extends SimpleDAO<Player, UUID> {
      */
     Collection<Player> getForPoints(int minPoints) throws DataAccessException;
 
+    /**
+     *  Gets a player's UUID using their username
+     * @param username the players username to search
+     * @return Players UUID
+     * @throws DataAccessException
+     */
+    UUID getPlayerUUID (String username) throws DataAccessException;
+
 
     /**
      * Gets all players with points between two values

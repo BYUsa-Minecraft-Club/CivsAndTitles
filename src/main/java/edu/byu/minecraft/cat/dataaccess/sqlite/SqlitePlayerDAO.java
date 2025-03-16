@@ -91,6 +91,18 @@ public class SqlitePlayerDAO extends SqliteDAO<Player> implements PlayerDAO {
     }
 
     /**
+     *  Gets a player's UUID using their username
+     * @param username the players username to search
+     * @return Players UUID
+     * @throws DataAccessException
+     */
+    @Override
+    public UUID getPlayerUUID(String username) throws DataAccessException {
+        Player player = executeQuery("SELECT * FROM player WHERE username = ?", this::parseSingle, username);
+        return player.uuid();
+    }
+
+    /**
      * @param minPoints lower bound of point range
      * @param maxPoints upper bound of point range
      * @return
