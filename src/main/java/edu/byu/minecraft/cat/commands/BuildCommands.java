@@ -1,16 +1,14 @@
 package edu.byu.minecraft.cat.commands;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 
 import edu.byu.minecraft.cat.CivsAndTitles;
-import edu.byu.minecraft.cat.commands.interactive.InteractiveFinishLine;
-import edu.byu.minecraft.cat.commands.interactive.InteractiveManager;
-import edu.byu.minecraft.cat.commands.interactive.InteractiveParameterLine;
+import edu.byu.minecraft.cat.commands.interactive.*;
 import edu.byu.minecraft.cat.commands.interactive.parameters.*;
-import edu.byu.minecraft.cat.commands.interactive.InteractiveTextLine;
 import edu.byu.minecraft.cat.dataaccess.*;
 import edu.byu.minecraft.cat.model.*;
 import edu.byu.minecraft.cat.util.Utilities;
@@ -101,7 +99,7 @@ public class BuildCommands {
             }
         };
 
-        new InteractiveManager(Arrays.asList("build", "test", "interactive"))
+        new InteractiveManager(Arrays.asList("build", "interactive"))
                 .addLine(new InteractiveTextLine(Text.literal("Build Request")))
                 .addLine(new InteractiveParameterLine(new InteractiveStringParameter("Name")))
                 .addLine(new InteractiveParameterLine(new InteractiveStringParameter("CivName").setSuggestionProvider(SuggestionProviders::allCivs).setValidater((x)-> {
@@ -132,6 +130,72 @@ public class BuildCommands {
                 })))
                 .addLine(new InteractiveFinishLine()).setDataHandler(BuildCommands::finishBuildJudgeRequest).register(dispatcher);
 
+        new InteractiveDisplay<Integer, Build>(Arrays.asList("build", "display"), new InteractiveDisplay.DisplayProvider<Integer, Build>() {
+            @Override
+            public Text getSimpleText(Build build) {
+                return Text.literal("(" + build.ID() + ")" + build.name() + ": " + build.status());
+            }
+
+            @Override
+            public Text getDetailedText(Build build) {
+                return Text.literal("(" + build.ID() + ")" + build.name() + ": " + build.status() + "\nSubmitted:" + build.submittedDate()) ;
+            }
+
+            @Override
+            public Collection<Build> getValues(CommandContext<ServerCommandSource> ctx) {
+                BuildDAO buildDAO;
+                try {
+                    buildDAO = CivsAndTitles.getDataAccess().getBuildDAO();
+                    return buildDAO.getAllForSubmitter(ctx.getSource().getPlayer().getUuid());
+                } catch (DataAccessException e) {
+                    ctx.getSource().sendFeedback(() -> Text.literal("Unable to access the database. Try again later."), false);
+                }
+                return null;
+            }
+
+            @Override
+            public Collection<Integer> getKeys(CommandContext<ServerCommandSource> ctx) {
+                BuildDAO buildDAO;
+                try {
+                    buildDAO = CivsAndTitles.getDataAccess().getBuildDAO();
+                    return buildDAO.getAllForSubmitter(ctx.getSource().getPlayer().getUuid()).stream().map(Build::ID).toList();
+                } catch (DataAccessException e) {
+                    ctx.getSource().sendFeedback(() -> Text.literal("Unable to access the database. Try again later."), false);
+                }
+                return null;
+            }
+
+            @Override
+            public Build getValue(Integer key) {
+                BuildDAO buildDAO;
+                try {
+                    buildDAO = CivsAndTitles.getDataAccess().getBuildDAO();
+                    return buildDAO.get(key);
+                } catch (DataAccessException e) {
+                    return null;
+                }
+            }
+
+            @Override
+            public Integer getKey(Build value) {
+                return value.ID();
+            }
+        }, new InteractiveDisplay.KeyInfo<Integer>() {
+            @Override
+            public Integer extractKey(CommandContext<ServerCommandSource> ctx) {
+                return ctx.getArgument("buildId", Integer.class);
+            }
+
+            @Override
+            public String getKeyName() {
+                return "buildId";
+            }
+
+            @Override
+            public ArgumentType<?> getArgumentType() {
+                return IntegerArgumentType.integer();
+            }
+        }).register(dispatcher);
     }
 
     public static Integer buildJudgeRequest(CommandContext<ServerCommandSource> ctx) {
