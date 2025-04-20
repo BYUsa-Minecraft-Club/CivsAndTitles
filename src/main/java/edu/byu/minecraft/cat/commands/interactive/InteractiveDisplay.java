@@ -79,7 +79,7 @@ public class InteractiveDisplay <K, T> {
         for(T val: provider.getValues(ctx)){
             MutableText root = Text.literal("");
             Text text = provider.getSimpleText(val);
-            Text button = Text.literal("  (details)").setStyle(Style.EMPTY.withColor(Formatting.YELLOW).withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND,makeDisplayIndCommand(provider.getKey(val)))));
+            Text button = Text.literal("  (details)").setStyle(Style.EMPTY.withColor(Formatting.YELLOW).withClickEvent(new ClickEvent.RunCommand(makeDisplayIndCommand(provider.getKey(val)))));
             root.append(text);
             root.append(button);
             ctx.getSource().sendFeedback(()-> root, false);

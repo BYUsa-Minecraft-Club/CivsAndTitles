@@ -23,7 +23,7 @@ public class InteractiveFinishLine implements InteractiveLine {
         }
         MutableText completeText;
         if(ready) {
-            completeText = Text.literal("(SUBMIT)").setStyle(Style.EMPTY.withColor(Formatting.YELLOW).withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, commandBuilder.makeFinishCommand())));
+            completeText = Text.literal("(SUBMIT)").setStyle(Style.EMPTY.withColor(Formatting.YELLOW).withClickEvent(new ClickEvent.RunCommand(commandBuilder.makeFinishCommand())));
         }
         else {
             completeText = Text.literal("INCOMPLETE").setStyle(Style.EMPTY.withColor(Formatting.RED));

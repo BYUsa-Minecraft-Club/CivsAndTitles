@@ -33,8 +33,7 @@ public class InteractiveParameterLine implements InteractiveLine{
             valueText.setStyle(Style.EMPTY.withColor(Formatting.RED));
         }
         MutableText clickText = Text.literal(" (SET)");
-        clickText.setStyle(Style.EMPTY.withColor(Formatting.YELLOW).withClickEvent(new ClickEvent(
-                ClickEvent.Action.SUGGEST_COMMAND, builder.makeSetCommand(paramName)
+        clickText.setStyle(Style.EMPTY.withColor(Formatting.YELLOW).withClickEvent(new ClickEvent.SuggestCommand(builder.makeSetCommand(paramName)
         )));
         return root.append(argText).append(valueText).append(clickText);
     }

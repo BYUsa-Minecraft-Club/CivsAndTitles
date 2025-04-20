@@ -18,7 +18,7 @@ public class InteractiveRotationParameter extends  InteractiveParameter{
 
     @Override
     protected Object getFromCommandContext(CommandContext<ServerCommandSource> ctx) {
-        return ctx.getArgument(getName(), PosArgument.class).toAbsoluteRotation(ctx.getSource());
+        return ctx.getArgument(getName(), PosArgument.class).getRotation(ctx.getSource());
     }
 
     @Override

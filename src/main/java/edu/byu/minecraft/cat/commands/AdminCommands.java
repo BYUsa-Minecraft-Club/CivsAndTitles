@@ -7,9 +7,11 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import edu.byu.minecraft.cat.CivsAndTitles;
 import edu.byu.minecraft.cat.dataaccess.DataAccessException;
+import edu.byu.minecraft.cat.dataaccess.TitleDAO;
 import edu.byu.minecraft.cat.model.Civ;
 import edu.byu.minecraft.cat.model.CivParticipantPlayer;
 import edu.byu.minecraft.cat.model.CivRequest;
+import edu.byu.minecraft.cat.model.Title;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -45,9 +47,12 @@ public class AdminCommands {
                 )));
         dispatcher.register(literal("titles").then(literal("admin").requires(ServerCommandSource::isExecutedByPlayer).requires(PermissionCheckers::isAdmin)
 
-                        .then(literal("addTitle").executes(AdminCommands::addBuild))
+                        .then(literal("addTitle").then(argument("TitleName", StringArgumentType.string()).then(argument("Description", StringArgumentType.greedyString()).executes(AdminCommands::addTitle))))
                 .then(literal("giveTitle").then(argument("playerName", StringArgumentType.string()).suggests(SuggestionProviders::allPlayers).then(argument("title", StringArgumentType.string()).suggests(SuggestionProviders::allTitles).executes(AdminCommands::bestowTitle))))
         ));
+
+
+
     }
 
     private static Integer approveCiv(CommandContext<ServerCommandSource> ctx) {
@@ -201,6 +206,24 @@ public class AdminCommands {
      */
     public static Integer addTitle(CommandContext<ServerCommandSource> ctx) {
         ctx.getSource().sendFeedback(()-> Text.literal("Adding Title"), false);
+        String titleName = ctx.getArgument("TitleName", String.class);
+        String titleDescription = ctx.getArgument("Description", String.class);
+
+        TitleDAO titleDAO;
+        try {
+            titleDAO = CivsAndTitles.getDataAccess().getTitleDAO();
+            if(titleDAO.get(titleName) != null){
+                ctx.getSource().sendFeedback(()->Text.literal("Title with name "+ titleName + "already exists"), false);
+                return 0;
+            }
+            titleDAO.update(new Title(titleName, "Blue", titleDescription));
+        } catch (DataAccessException ex){
+            ctx.getSource().sendFeedback(()->Text.literal("Unable to access the database. Try again later."), false);
+            return 0;
+        }
+
+
+
         return 1;
     }
 

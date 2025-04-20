@@ -340,17 +340,18 @@ public class BuildCommands {
     public static Integer buildJudgeRequestRaw(CommandContext<ServerCommandSource> ctx) {
         NbtCompound data = ctx.getArgument("data", NbtCompound.class);
 
-        String civName = data.getString("CivName");
-        String buildName = data.getString("Name");
-        if (buildName.isEmpty())
+        Optional<String> civName = data.getString("CivName");
+        Optional<String> buildName = data.getString("Name");
+        if (buildName.isEmpty() || civName.isEmpty())
         {
             ctx.getSource().sendFeedback(()->Text.literal("Name not provided"), false);
             return 0;
         }
+        Optional<String> commentsT =  data.getString("Comments");;
         String comments;
 
-        if (data.contains("Comments")) {
-             comments = data.getString("Comments");
+        if (commentsT.isPresent()) {
+             comments = commentsT.get();
         } else {
             comments = null;
         }
@@ -358,15 +359,21 @@ public class BuildCommands {
         int[] posList = null;
         NbtList orientList = null;
         String dimension = null;
-        if (data.contains("Pos")){
-            posList = data.getIntArray("Pos");
+
+        Optional<int[]> posListT = data.getIntArray("Pos");
+        if (posListT.isPresent()){
+            posList = posListT.get();
         }
-        if (data.contains("Rotation"))
+
+        Optional<NbtList> orientListT = data.getList("Rotation");
+        if (orientListT.isPresent())
         {
-            orientList = data.getList("Rotation", NbtElement.FLOAT_TYPE);
+            orientList = orientListT.get();
         }
-        if(data.contains("Dimension")){
-            dimension =  data.getString("Dimension");
+
+        Optional<String> dimensionT = data.getString("Dimension");
+        if(dimensionT.isPresent()){
+            dimension =  dimensionT.get();
         }
 
         if (posList != null || orientList != null || dimension != null)
@@ -383,19 +390,25 @@ public class BuildCommands {
             }
             if (orientList == null)
             {
-                location = new Location(0, posList[0],posList[1], posList[2], new Identifier(dimension),0,0);
+                location = new Location(0, posList[0],posList[1], posList[2],  Identifier.of(dimension),0,0);
             }
             else
             {
-                location = new Location(0, posList[0],posList[1], posList[2], new Identifier(dimension),orientList.getFloat(0),orientList.getFloat(1));
+                location = new Location(0, posList[0],posList[1], posList[2], Identifier.of(dimension),orientList.getFloat(0).orElse(0.0f),orientList.getFloat(1).orElse(0.0f));
             }
         }
-        NbtList builders = data.getList("builders", NbtElement.STRING_TYPE);
+        Optional<NbtList> builders = data.getList("builders");
         List<String> builderNames = new ArrayList<>();
-        for (var builder: builders){
-            builderNames.add(builder.asString());
+        if(builders.isPresent()) {
+            for (var builder : builders.get()) {
+                Optional<String> string  = builder.asString();
+                if (string.isPresent())
+                {
+                    builderNames.add(string.get());
+                }
+            }
         }
-        return submitBuildRequest(ctx, buildName, civName, comments, location, builderNames);
+        return submitBuildRequest(ctx, buildName.get(), civName.get(), comments, location, builderNames);
     }
 
 
