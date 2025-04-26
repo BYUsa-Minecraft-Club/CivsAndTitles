@@ -41,6 +41,11 @@ public class InteractiveManager {
 
         @Override
         public String makeSetCommand(String paramName) {
+            Object param = activeSessions.get(sessionId).parameters.get(paramName);
+            if(param != null)
+            {
+                return makeBaseCommand() + "set " + sessionId + " " + paramName + " " + parameterInfoMap.get(paramName).displayString(param);
+            }
             return makeBaseCommand() + "set " + sessionId + " " + paramName;
         }
 
@@ -64,6 +69,9 @@ public class InteractiveManager {
 
     private final Map<Integer, SessionInfo> activeSessions;
     private List<InteractiveLine> lines;
+
+    private InteractiveParameter startArg;
+
     private int currentId;
 
     private final Map<String, InteractiveParameter> parameterInfoMap;
@@ -76,6 +84,7 @@ public class InteractiveManager {
         this.currentId = 0;
         this.parameterInfoMap = new HashMap<>();
         this.lines = new ArrayList<>();
+        this.startArg = null;
     }
 
     public InteractiveManager addLine(InteractiveLine line){
@@ -85,12 +94,20 @@ public class InteractiveManager {
         }
         return this;
     }
+
+    public InteractiveManager setStartArg(InteractiveParameter param)
+    {
+        parameterInfoMap.put(param.getName(), param);
+        startArg = param;
+        return this;
+    }
     public InteractiveManager setDataHandler(BiFunction<CommandContext<ServerCommandSource>, Map<String, Object>, Integer> consumer){
         finishConsumer = consumer;
         return this;
     }
     public void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         ArgumentBuilder<ServerCommandSource, ?> base = null;
+        ArgumentBuilder<ServerCommandSource, ?> root = null;
         ArgumentBuilder<ServerCommandSource, ?> tail = null;
         ArgumentBuilder<ServerCommandSource, ?> arg = null;
         base = argument("sessionId", IntegerArgumentType.integer());
@@ -116,8 +133,22 @@ public class InteractiveManager {
         tail = base;
         base = literal(basePath.getLast());
         base.then(tail);
+
         tail = literal("start");
-        tail.executes(this::startInteractive);
+        if(startArg != null)
+        {
+            RequiredArgumentBuilder<ServerCommandSource, ?> arg2 = argument(startArg.getName(), startArg.getCommandArgumentType());
+            SuggestionProvider<ServerCommandSource> suggester = startArg.getSuggestionProvider();
+            if (suggester != null) {
+                arg2.suggests(suggester);
+            }
+            arg2.executes(this::startInteractive);
+            tail.then(arg2);
+        }
+        else {
+            tail.executes(this::startInteractive);
+        }
+
         base.then(tail);
         tail = literal("finish");
         arg = argument("sessionId",IntegerArgumentType.integer());
@@ -154,6 +185,17 @@ public class InteractiveManager {
         for(InteractiveParameter info: parameterInfoMap.values()){
             defaults.put(info.getName(), info.getDefaultVal(ctx));
         }
+
+        if(startArg != null)
+        {
+            Object paramVal = parameterInfoMap.get(startArg.getName()).loadFromCommandContext(ctx);
+            if (paramVal == null)
+            {
+                ctx.getSource().sendFeedback(()-> Text.literal("Invalid value for " + startArg.getName()), false);
+                return 0;
+            }
+            defaults.put(startArg.getName(), paramVal);
+        }
         activeSessions.put(currentId, new InteractiveManager.SessionInfo(player, defaults));
 
         displayInteractive(ctx.getSource(), currentId);
@@ -163,7 +205,10 @@ public class InteractiveManager {
 
     private boolean checkSession(CommandContext<ServerCommandSource> ctx, int id){
         if (!activeSessions.containsKey(id)){
-            ctx.getSource().sendFeedback(()-> Text.literal("invalid session id"), false);
+            ctx.getSource().sendFeedback(()-> Text.literal("invalid session id " + id + "valid ids are"), false);
+            for(var session : activeSessions.keySet()){
+                ctx.getSource().sendFeedback(()-> Text.literal("session id " + session), false);
+            }
             return false;
         }
         UUID player = activeSessions.get(id).player();

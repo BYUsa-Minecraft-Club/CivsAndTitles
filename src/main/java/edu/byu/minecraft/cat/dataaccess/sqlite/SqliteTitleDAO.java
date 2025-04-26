@@ -43,8 +43,8 @@ public class SqliteTitleDAO extends SqliteDAO<Title> implements TitleDAO {
      */
     @Override
     public String insert(Title title) throws DataAccessException {
-        executeUpdate("INSERT INTO title (name, color, description) VALUES (?, ?, ?)",
-                title.title(), title.color(), title.description());
+        executeUpdate("INSERT INTO title (name, color, description, type) VALUES (?, ?, ?, ?)",
+                title.title(), title.color(), title.description(), title.type().name());
         return title.title();
     }
 
@@ -63,8 +63,8 @@ public class SqliteTitleDAO extends SqliteDAO<Title> implements TitleDAO {
      */
     @Override
     public void update(Title title) throws DataAccessException {
-        executeUpdate("UPDATE title SET color = ?, description = ? WHERE name = ?",
-                title.color(), title.description(), title.title());
+        executeUpdate("UPDATE title SET color = ?, description = ?, type = ? WHERE name = ?",
+                title.color(), title.description(), title.type().name(), title.title());
     }
 
     /**
@@ -77,7 +77,8 @@ public class SqliteTitleDAO extends SqliteDAO<Title> implements TitleDAO {
         return new Title(
                 rs.getString("name"),
                 rs.getString("color"),
-                rs.getString("description")
+                rs.getString("description"),
+                Title.Type.valueOf(rs.getString("type"))
         );
     }
 }

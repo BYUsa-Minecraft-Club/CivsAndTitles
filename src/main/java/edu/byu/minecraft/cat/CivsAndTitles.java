@@ -3,8 +3,13 @@ package edu.byu.minecraft.cat;
 import edu.byu.minecraft.cat.commands.*;
 import edu.byu.minecraft.cat.dataaccess.DataAccess;
 import edu.byu.minecraft.cat.dataaccess.DataAccessException;
+import edu.byu.minecraft.cat.dataaccess.TitleDAO;
+import edu.byu.minecraft.cat.dataaccess.UnlockedTitleDAO;
 import edu.byu.minecraft.cat.dataaccess.sqlite.SqliteDataAccess;
 import edu.byu.minecraft.cat.model.Player;
+import edu.byu.minecraft.cat.model.Title;
+import edu.byu.minecraft.cat.model.UnlockedTitle;
+import eu.pb4.placeholders.api.parsers.TagParser;
 import net.fabricmc.api.ModInitializer;
 
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -13,8 +18,16 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.time.LocalDate;
+import java.util.List;
+import eu.pb4.placeholders.api.Placeholders;
+import eu.pb4.placeholders.api.PlaceholderResult;
+
 
 public class CivsAndTitles implements ModInitializer {
 	public static final String MOD_ID = "civsandtitles";
@@ -46,12 +59,33 @@ public class CivsAndTitles implements ModInitializer {
         }
         LOGGER.info("Hello Fabric world!");
 		CommandRegistrationCallback.EVENT.register(TitleCommands::registerCommands);
-		CommandRegistrationCallback.EVENT.register(CivCommands::registerCommands);
-		CommandRegistrationCallback.EVENT.register(BuildCommands::registerCommands);
-		CommandRegistrationCallback.EVENT.register(CivLeaderCommands::registerCommands);
+//		CommandRegistrationCallback.EVENT.register(CivCommands::registerCommands);
+//		CommandRegistrationCallback.EVENT.register(BuildCommands::registerCommands);
+//		CommandRegistrationCallback.EVENT.register(CivLeaderCommands::registerCommands);
 		CommandRegistrationCallback.EVENT.register(AdminCommands::registerCommands);
 
 		ServerPlayConnectionEvents.JOIN.register(this::playerJoinCallback);
+		Placeholders.register(
+				Identifier.of("byu", "title"),
+				(ctx, arg) -> {
+					if (!ctx.hasPlayer())
+						return PlaceholderResult.invalid("No player!");
+					try {
+						ServerPlayerEntity serverPlayer = ctx.player();
+						Player dbPlayer = getDataAccess().getPlayerDAO().get(serverPlayer.getUuid());
+						TitleDAO titleDAO = getDataAccess().getTitleDAO();
+
+						Title title = titleDAO.get(dbPlayer.title());
+						if (title == null){
+							return 	PlaceholderResult.value("");
+						}
+						return 	PlaceholderResult.value(TagParser.SIMPLIFIED_TEXT_FORMAT_SAFE.parseText(title.color()+ " ", ctx.asParserContext()));
+
+					} catch (DataAccessException e) {
+						return PlaceholderResult.invalid("Database Error!");
+					}
+				}
+		);
 	}
 
 	private void playerJoinCallback(ServerPlayNetworkHandler serverPlayNetworkHandler, PacketSender packetSender,
@@ -59,10 +93,16 @@ public class CivsAndTitles implements ModInitializer {
 		try {
 			ServerPlayerEntity serverPlayer = serverPlayNetworkHandler.getPlayer();
 			Player dbPlayer = getDataAccess().getPlayerDAO().get(serverPlayer.getUuid());
+			UnlockedTitleDAO unlockedTitleDAO = getDataAccess().getUnlockedTitleDAO();;
 			if (dbPlayer == null) {
-				dbPlayer = new Player(serverPlayer.getUuid(), serverPlayer.getNameForScoreboard(), 0, "New Player",
+				dbPlayer = new Player(serverPlayer.getUuid(), serverPlayer.getNameForScoreboard(), 0, null,
 						Player.Role.PLAYER, true);
 				getDataAccess().getPlayerDAO().insert(dbPlayer);
+				List<Title> defaultTitles = getDataAccess().getTitleDAO().getAll().stream().filter(x -> x.type() == Title.Type.DEFAULT).toList();
+				for (Title x: defaultTitles){
+					unlockedTitleDAO.insert(new UnlockedTitle(serverPlayer.getUuid(), x.title(), LocalDate.now().toString()));
+				}
+
 			}
 			else if (!serverPlayer.getNameForScoreboard().equals(dbPlayer.name())) {
 				dbPlayer = new Player(serverPlayer.getUuid(), serverPlayer.getNameForScoreboard(), dbPlayer.points(),

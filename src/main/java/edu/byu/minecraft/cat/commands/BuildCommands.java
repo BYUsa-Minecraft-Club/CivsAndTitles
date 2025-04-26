@@ -132,12 +132,12 @@ public class BuildCommands {
 
         new InteractiveDisplay<Integer, Build>(Arrays.asList("build", "display"), new InteractiveDisplay.DisplayProvider<Integer, Build>() {
             @Override
-            public Text getSimpleText(Build build) {
+            public Text getSimpleText(Build build, CommandContext<ServerCommandSource> ctx) {
                 return Text.literal("(" + build.ID() + ")" + build.name() + ": " + build.status());
             }
 
             @Override
-            public Text getDetailedText(Build build) {
+            public Text getDetailedText(Build build, CommandContext<ServerCommandSource> ctx) {
                 return Text.literal("(" + build.ID() + ")" + build.name() + ": " + build.status() + "\nSubmitted:" + build.submittedDate()) ;
             }
 

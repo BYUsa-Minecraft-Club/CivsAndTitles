@@ -1,5 +1,5 @@
 plugins {
-	id 'fabric-loom' version '1.6-SNAPSHOT'
+	id 'fabric-loom' version '1.10.5'
 	id 'maven-publish'
 }
 
@@ -20,6 +20,10 @@ repositories {
 	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
 	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
 	// for more information about repositories.
+	maven {
+		url "https://maven.nucleoid.xyz/"
+		name "Nucleoid"
+	}
 }
 
 dependencies {
@@ -37,6 +41,8 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter
 	testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter', version: '5.10.2'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	modImplementation include("eu.pb4:placeholder-api:2.6.2+1.21.5")
+
 }
 
 processResources {

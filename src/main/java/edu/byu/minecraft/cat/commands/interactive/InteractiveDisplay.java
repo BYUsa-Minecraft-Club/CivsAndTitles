@@ -38,8 +38,8 @@ public class InteractiveDisplay <K, T> {
     private final DisplayProvider<K,T> provider;
     private final KeyInfo<K> keyInfo;
     public interface DisplayProvider<K, T> {
-        Text getSimpleText(T t);
-        Text getDetailedText(T t);
+        Text getSimpleText(T t, CommandContext<ServerCommandSource> ctx);
+        Text getDetailedText(T t, CommandContext<ServerCommandSource> ctx);
         Collection<T> getValues(CommandContext<ServerCommandSource> ctx);
         Collection<K> getKeys(CommandContext<ServerCommandSource> ctx);
         T getValue(K key);
@@ -78,7 +78,7 @@ public class InteractiveDisplay <K, T> {
     private Integer showList (CommandContext<ServerCommandSource> ctx) {
         for(T val: provider.getValues(ctx)){
             MutableText root = Text.literal("");
-            Text text = provider.getSimpleText(val);
+            Text text = provider.getSimpleText(val, ctx);
             Text button = Text.literal("  (details)").setStyle(Style.EMPTY.withColor(Formatting.YELLOW).withClickEvent(new ClickEvent.RunCommand(makeDisplayIndCommand(provider.getKey(val)))));
             root.append(text);
             root.append(button);
@@ -94,7 +94,7 @@ public class InteractiveDisplay <K, T> {
             ctx.getSource().sendFeedback(()-> Text.literal("Invalid " + keyInfo.getKeyName() + ": " + key.toString()), false);
             return 0;
         }
-        ctx.getSource().sendFeedback(()-> provider.getDetailedText(val), false);
+        ctx.getSource().sendFeedback(()-> provider.getDetailedText(val, ctx), false);
         return 1;
     }
     public void register(CommandDispatcher<ServerCommandSource> dispatcher) {

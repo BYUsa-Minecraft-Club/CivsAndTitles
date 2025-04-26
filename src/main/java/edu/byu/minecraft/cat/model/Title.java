@@ -7,4 +7,10 @@ package edu.byu.minecraft.cat.model;
  * @param color       title display color
  * @param description title description, what was required to acquire the title, possible lore
  */
-public record Title(String title, String color, String description) {}
+public record Title(String title, String color, String description, Type type) {
+   public enum Type {
+        DEFAULT,
+        WORLD,
+        PERMANENT,
+    }
+}

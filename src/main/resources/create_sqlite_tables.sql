@@ -2,7 +2,8 @@ CREATE TABLE IF NOT EXISTS title
 (
     name        TEXT NOT NULL PRIMARY KEY,
     color       TEXT NOT NULL,
-    description TEXT NOT NULL
+    description TEXT NOT NULL,
+    type        TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS player
