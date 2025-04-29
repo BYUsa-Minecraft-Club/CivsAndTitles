@@ -20,7 +20,6 @@
 		]
 	},
 	"mixins": [
-		"civsandtitles.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.15.11",
