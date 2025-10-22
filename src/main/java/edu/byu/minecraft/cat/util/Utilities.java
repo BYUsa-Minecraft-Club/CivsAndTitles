@@ -26,7 +26,7 @@ public class Utilities {
     public static Location getPlayerLocation(ServerPlayerEntity player) {
         if (player == null) { return null; }
         return new Location(0, player.getBlockX(), player.getBlockY(), player.getBlockZ(),
-                player.getWorld().getRegistryKey().getValue(), player.getHeadYaw(), player.getPitch());
+                player.getEntityWorld().getRegistryKey().getValue(), player.getHeadYaw(), player.getPitch());
     }
 
 }
