@@ -44,8 +44,8 @@ public class SqlitePlayerDAO extends SqliteDAO<Player> implements PlayerDAO {
      */
     @Override
     public UUID insert(Player player) throws DataAccessException {
-        executeUpdate("INSERT INTO player (uuid, username, points, current_title, role, show_rank) " +
-                "VALUES (?, ?, ?, ?, ?, ?)", player.uuid(), player.name(), player.points(), player.title(),
+        executeUpdate("INSERT INTO player (uuid, username, current_title, role, show_rank) " +
+                "VALUES (?, ?, ?, ?, ?)", player.uuid(), player.name(), player.title(),
                 player.role(), player.showRank());
         return player.uuid();
     }
@@ -65,8 +65,8 @@ public class SqlitePlayerDAO extends SqliteDAO<Player> implements PlayerDAO {
      */
     @Override
     public void update(Player player) throws DataAccessException {
-        executeUpdate("UPDATE player SET username = ?, points = ?, current_title = ?, " +
-                "role = ?, show_rank = ? WHERE uuid = ?", player.name(), player.points(),
+        executeUpdate("UPDATE player SET username = ?, current_title = ?, " +
+                "role = ?, show_rank = ? WHERE uuid = ?", player.name(),
                 player.title(), player.role(), player.showRank(), player.uuid());
     }
 
@@ -78,16 +78,6 @@ public class SqlitePlayerDAO extends SqliteDAO<Player> implements PlayerDAO {
     @Override
     public Collection<Player> getForRole(Player.Role role) throws DataAccessException {
         return executeQuery("SELECT * FROM player WHERE role = ?", this::parseCollection, role);
-    }
-
-    /**
-     * @param minPoints minimum number of points
-     * @return
-     * @throws DataAccessException
-     */
-    @Override
-    public Collection<Player> getForPoints(int minPoints) throws DataAccessException {
-        return executeQuery("SELECT * FROM player WHERE points >= ?", this::parseCollection, minPoints);
     }
 
     /**
@@ -103,18 +93,6 @@ public class SqlitePlayerDAO extends SqliteDAO<Player> implements PlayerDAO {
     }
 
     /**
-     * @param minPoints lower bound of point range
-     * @param maxPoints upper bound of point range
-     * @return
-     * @throws DataAccessException
-     */
-    @Override
-    public Collection<Player> getForPoints(int minPoints, int maxPoints) throws DataAccessException {
-        return executeQuery("SELECT * FROM player WHERE points >= ? AND points <= ?",
-                this::parseCollection, minPoints, maxPoints);
-    }
-
-    /**
      * @param rs result set to retrieve row data from
      * @return
      * @throws SQLException
@@ -124,7 +102,6 @@ public class SqlitePlayerDAO extends SqliteDAO<Player> implements PlayerDAO {
         return new Player(
                 UUID.fromString(rs.getString("uuid")),
                 rs.getString("username"),
-                rs.getInt("points"),
                 rs.getString("current_title"),
                 Player.Role.valueOf(rs.getString("role")),
                 rs.getBoolean("show_rank")

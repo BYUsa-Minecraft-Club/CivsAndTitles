@@ -2,28 +2,20 @@ package edu.byu.minecraft.cat.commands.interactive;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.ArgumentType;
-import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import edu.byu.minecraft.cat.CivsAndTitles;
-import edu.byu.minecraft.cat.dataaccess.DataAccessException;
-import edu.byu.minecraft.cat.model.Civ;
-import edu.byu.minecraft.cat.model.CivParticipantPlayer;
 import net.minecraft.command.CommandSource;
 import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
-import java.security.Key;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;

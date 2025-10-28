@@ -59,9 +59,6 @@ public class CivsAndTitles implements ModInitializer {
         }
         LOGGER.info("Hello Fabric world!");
 		CommandRegistrationCallback.EVENT.register(TitleCommands::registerCommands);
-//		CommandRegistrationCallback.EVENT.register(CivCommands::registerCommands);
-//		CommandRegistrationCallback.EVENT.register(BuildCommands::registerCommands);
-//		CommandRegistrationCallback.EVENT.register(CivLeaderCommands::registerCommands);
 		CommandRegistrationCallback.EVENT.register(AdminCommands::registerCommands);
 
 		ServerPlayConnectionEvents.JOIN.register(this::playerJoinCallback);
@@ -95,7 +92,7 @@ public class CivsAndTitles implements ModInitializer {
 			Player dbPlayer = getDataAccess().getPlayerDAO().get(serverPlayer.getUuid());
 			UnlockedTitleDAO unlockedTitleDAO = getDataAccess().getUnlockedTitleDAO();;
 			if (dbPlayer == null) {
-				dbPlayer = new Player(serverPlayer.getUuid(), serverPlayer.getNameForScoreboard(), 0, null,
+				dbPlayer = new Player(serverPlayer.getUuid(), serverPlayer.getNameForScoreboard(), null,
 						Player.Role.PLAYER, true);
 				getDataAccess().getPlayerDAO().insert(dbPlayer);
 				List<Title> defaultTitles = getDataAccess().getTitleDAO().getAll().stream().filter(x -> x.type() == Title.Type.DEFAULT).toList();
@@ -105,7 +102,7 @@ public class CivsAndTitles implements ModInitializer {
 
 			}
 			else if (!serverPlayer.getNameForScoreboard().equals(dbPlayer.name())) {
-				dbPlayer = new Player(serverPlayer.getUuid(), serverPlayer.getNameForScoreboard(), dbPlayer.points(),
+				dbPlayer = new Player(serverPlayer.getUuid(), serverPlayer.getNameForScoreboard(),
 						dbPlayer.title(), dbPlayer.role(), dbPlayer.showRank());
 				getDataAccess().getPlayerDAO().update(dbPlayer);
 			}

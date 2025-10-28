@@ -2,7 +2,6 @@ package edu.byu.minecraft.cat.dataaccess.sqlite;
 
 import edu.byu.minecraft.cat.CivsAndTitles;
 import edu.byu.minecraft.cat.dataaccess.DataAccessException;
-import edu.byu.minecraft.cat.model.Location;
 import net.minecraft.util.Identifier;
 
 import java.io.File;

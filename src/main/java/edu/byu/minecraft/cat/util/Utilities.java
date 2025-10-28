@@ -1,6 +1,5 @@
 package edu.byu.minecraft.cat.util;
 
-import edu.byu.minecraft.cat.model.Location;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.time.LocalDateTime;
@@ -17,16 +16,4 @@ public class Utilities {
     public static String getTime() {
         return LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
     }
-
-    /***
-     * Creates a Location object based on a player model
-     * @param player the ServerPlayerEntity data for the player
-     * @return null if the player is null.  Otherwise, a Location Object.
-     */
-    public static Location getPlayerLocation(ServerPlayerEntity player) {
-        if (player == null) { return null; }
-        return new Location(0, player.getBlockX(), player.getBlockY(), player.getBlockZ(),
-                player.getEntityWorld().getRegistryKey().getValue(), player.getHeadYaw(), player.getPitch());
-    }
-
 }
