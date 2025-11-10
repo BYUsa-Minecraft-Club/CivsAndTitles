@@ -42,7 +42,7 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter
 	testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter', version: '5.10.2'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-	modImplementation include("eu.pb4:placeholder-api:2.6.2+1.21.5")
+	modImplementation include("eu.pb4:placeholder-api:${project.placeholder_version}")
 
 }
 

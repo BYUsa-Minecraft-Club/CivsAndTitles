@@ -3,40 +3,60 @@ package edu.byu.minecraft.cat.commands.interactive.parameters;
 import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
+import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.text.Text;
 
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-public abstract class InteractiveParameter {
+public abstract class InteractiveParameter<T> {
+    Class<T> type;
     String name;
     SuggestionProvider<ServerCommandSource> suggestionProvider;
-    Object defaultVal;
-    Function<CommandContext<ServerCommandSource>, Object> defaultValProvider;
+    T defaultVal;
+    Function<CommandContext<ServerCommandSource>, T> defaultValProvider;
 
-    Predicate<Object> validater;
-    public InteractiveParameter(String name){
+    Predicate<T> validator;
+    public InteractiveParameter(String name, Class<T> type){
         this.name = name;
+        this.type = type;
     }
     public String getName() {
         return  name;
     }
-    public abstract String displayString(Object object);
+    public abstract String displayString(T object);
+
+    public Text displayText(T object) {
+        return Text.of(displayString(object));
+    }
+
+    private T tryCast(Object object) throws ClassCastException {
+        return type.cast(object);
+    }
+
+    public Text tryDisplayText(Object object) throws ClassCastException {
+        return displayText(tryCast(object));
+    }
+
+    public String tryDisplayString(Object object) throws ClassCastException {
+        return displayString(tryCast(object));
+    }
 
     /**
      * returns value of parameter using the command
      * @param ctx command context setting parameter
      * @return if parameter was valid
      */
-    public Object loadFromCommandContext(CommandContext<ServerCommandSource> ctx) {
-        Object val = getFromCommandContext(ctx);
-        if(validater != null && !validater.test(val))
+    public T loadFromCommandContext(CommandContext<ServerCommandSource> ctx) {
+        T val = getFromCommandContext(ctx);
+        if(validator != null && !validator.test(val))
         {
             return null;
         }
         return val;
     }
-    protected abstract Object getFromCommandContext(CommandContext<ServerCommandSource> ctx);
+    protected abstract T getFromCommandContext(CommandContext<ServerCommandSource> ctx);
 
 
     /**
@@ -44,7 +64,7 @@ public abstract class InteractiveParameter {
      * @param ctx current context
      * @return parameter or null if there is no default
      */
-    public Object getDefaultVal(CommandContext<ServerCommandSource> ctx){
+    public T getDefaultVal(CommandContext<ServerCommandSource> ctx){
         if(defaultVal != null)
         {
             return defaultVal;
@@ -57,24 +77,24 @@ public abstract class InteractiveParameter {
     }
 
 
-    public InteractiveParameter setDefaultVal(Object object){
+    public InteractiveParameter<T> setDefaultVal(T object){
         defaultVal = object;
         return this;
     }
 
-    public InteractiveParameter setDefaultProvider(Function<CommandContext<ServerCommandSource>, Object> provider) {
+    public InteractiveParameter<T> setDefaultProvider(Function<CommandContext<ServerCommandSource>, T> provider) {
         defaultValProvider = provider;
         return this;
     }
 
-    public InteractiveParameter setValidater(Predicate<Object> validater){
-        this.validater = validater;
+    public InteractiveParameter<T> setValidator(Predicate<T> validator){
+        this.validator = validator;
         return this;
     }
 
-    public abstract ArgumentType<?> getCommandArgumentType();
+    public abstract ArgumentType<T> getCommandArgumentType(CommandRegistryAccess registryAccess);
 
-    public InteractiveParameter setSuggestionProvider(SuggestionProvider<ServerCommandSource> provider){
+    public InteractiveParameter<T> setSuggestionProvider(SuggestionProvider<ServerCommandSource> provider){
         suggestionProvider = provider;
         return this;
     }

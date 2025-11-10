@@ -11,7 +11,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-public class InteractiveFinishLine implements InteractiveLine {
+public class InteractiveFinishLine implements InteractiveLine<Void> {
     @Override
     public Text getText(Map<String, Object> parameters, InteractiveCommandBuilder commandBuilder) {
         boolean ready = true;
@@ -21,18 +21,17 @@ public class InteractiveFinishLine implements InteractiveLine {
                 break;
             }
         }
-        MutableText completeText;
+
         if(ready) {
-            completeText = Text.literal("(SUBMIT)").setStyle(Style.EMPTY.withColor(Formatting.YELLOW).withClickEvent(new ClickEvent.RunCommand(commandBuilder.makeFinishCommand())));
+            return Text.literal("(SUBMIT)").setStyle(Style.EMPTY.withColor(Formatting.YELLOW).withClickEvent(new ClickEvent.RunCommand(commandBuilder.makeFinishCommand())));
         }
         else {
-            completeText = Text.literal("INCOMPLETE").setStyle(Style.EMPTY.withColor(Formatting.RED));
+            return Text.literal("INCOMPLETE").setStyle(Style.EMPTY.withColor(Formatting.RED));
         }
-        return completeText;
     }
 
     @Override
-    public Collection<InteractiveParameter> getLineParameters() {
+    public Collection<InteractiveParameter<Void>> getLineParameters() {
         return Collections.emptyList();
     }
 }

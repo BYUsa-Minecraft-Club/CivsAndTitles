@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
-public class InteractiveTextLine implements InteractiveLine {
+public class InteractiveTextLine implements InteractiveLine<Text> {
     Text text;
     public InteractiveTextLine(Text text){
         this.text = text;
@@ -18,7 +18,7 @@ public class InteractiveTextLine implements InteractiveLine {
     }
 
     @Override
-    public Collection<InteractiveParameter> getLineParameters() {
+    public Collection<InteractiveParameter<Text>> getLineParameters() {
         return new ArrayList<>();
     }
 }

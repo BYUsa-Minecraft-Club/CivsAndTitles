@@ -9,13 +9,13 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.context.ParsedCommandNode;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import edu.byu.minecraft.cat.commands.interactive.parameters.InteractiveParameter;
+import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 
 import java.util.*;
-import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 
 import static com.mojang.brigadier.builder.LiteralArgumentBuilder.literal;
 import static com.mojang.brigadier.builder.RequiredArgumentBuilder.argument;
@@ -44,9 +44,10 @@ public class InteractiveManager {
             Object param = activeSessions.get(sessionId).parameters.get(paramName);
             if(param != null)
             {
-                return makeBaseCommand() + "set " + sessionId + " " + paramName + " " + parameterInfoMap.get(paramName).displayString(param);
+                return makeBaseCommand() + "set " + sessionId + " " + paramName + " "
+                        + parameterInfoMap.get(paramName).tryDisplayString(param);
             }
-            return makeBaseCommand() + "set " + sessionId + " " + paramName;
+            return makeBaseCommand() + "set " + sessionId + " " + paramName + " ";
         }
 
         @Override
@@ -68,13 +69,13 @@ public class InteractiveManager {
     private final List<String> basePath;
 
     private final Map<Integer, SessionInfo> activeSessions;
-    private List<InteractiveLine> lines;
+    private List<InteractiveLine<?>> lines;
 
-    private InteractiveParameter startArg;
+    private InteractiveParameter<?> startArg;
 
     private int currentId;
 
-    private final Map<String, InteractiveParameter> parameterInfoMap;
+    private final Map<String, InteractiveParameter<?>> parameterInfoMap;
 
     private BiFunction<CommandContext<ServerCommandSource>, Map<String, Object>, Integer> finishConsumer;
 
@@ -84,10 +85,9 @@ public class InteractiveManager {
         this.currentId = 0;
         this.parameterInfoMap = new HashMap<>();
         this.lines = new ArrayList<>();
-        this.startArg = null;
     }
 
-    public InteractiveManager addLine(InteractiveLine line){
+    public InteractiveManager addLine(InteractiveLine<?> line){
         lines.add(line);
         for (var param: line.getLineParameters()){
             parameterInfoMap.put(param.getName(), param);
@@ -95,39 +95,40 @@ public class InteractiveManager {
         return this;
     }
 
-    public InteractiveManager setStartArg(InteractiveParameter param)
+    public InteractiveManager setStartArg(InteractiveParameter<?> param)
     {
         parameterInfoMap.put(param.getName(), param);
         startArg = param;
         return this;
     }
+
     public InteractiveManager setDataHandler(BiFunction<CommandContext<ServerCommandSource>, Map<String, Object>, Integer> consumer){
         finishConsumer = consumer;
         return this;
     }
-    public void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        ArgumentBuilder<ServerCommandSource, ?> base = null;
-        ArgumentBuilder<ServerCommandSource, ?> root = null;
-        ArgumentBuilder<ServerCommandSource, ?> tail = null;
-        ArgumentBuilder<ServerCommandSource, ?> arg = null;
-        base = argument("sessionId", IntegerArgumentType.integer());
+    public void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registryAccess) {
+        ArgumentBuilder<ServerCommandSource, ?> top;
+        LiteralArgumentBuilder<ServerCommandSource> base;
+        ArgumentBuilder<ServerCommandSource, ?> tail;
+        ArgumentBuilder<ServerCommandSource, ?> arg;
+        top = argument("sessionId", IntegerArgumentType.integer());
         //handle parameters
         for (var line: lines) {
-            for (var parameter: line.getLineParameters()) {
+            for (InteractiveParameter<?> parameter: line.getLineParameters()) {
                 String name = parameter.getName();
                 tail = literal(name);
-                RequiredArgumentBuilder<ServerCommandSource, ?> arg2 = argument(name, parameter.getCommandArgumentType());
+                RequiredArgumentBuilder<ServerCommandSource, ?> arg2 = argument(name, parameter.getCommandArgumentType(registryAccess));
                 SuggestionProvider<ServerCommandSource> suggester = parameter.getSuggestionProvider();
                 if (suggester != null) {
                     arg2.suggests(suggester);
                 }
                 arg2.executes(this::setParameter);
                 tail.then(arg2);
-                base.then(tail);
+                top.then(tail);
             }
         }
 
-        tail = base;
+        tail = top;
         base = literal("set");
         base.then(tail);
         tail = base;
@@ -137,7 +138,7 @@ public class InteractiveManager {
         tail = literal("start");
         if(startArg != null)
         {
-            RequiredArgumentBuilder<ServerCommandSource, ?> arg2 = argument(startArg.getName(), startArg.getCommandArgumentType());
+            RequiredArgumentBuilder<ServerCommandSource, ?> arg2 = argument(startArg.getName(), startArg.getCommandArgumentType(registryAccess));
             SuggestionProvider<ServerCommandSource> suggester = startArg.getSuggestionProvider();
             if (suggester != null) {
                 arg2.suggests(suggester);
@@ -167,7 +168,7 @@ public class InteractiveManager {
         }
         base.requires(ServerCommandSource::isExecutedByPlayer);
 
-        dispatcher.register((LiteralArgumentBuilder<ServerCommandSource>)base);
+        dispatcher.register(base);
     }
 
 
@@ -180,22 +181,19 @@ public class InteractiveManager {
     }
 
     private Integer startInteractive (CommandContext<ServerCommandSource> ctx){
-        UUID player = ctx.getSource().getPlayer().getUuid();
+        ServerPlayerEntity playerEntity = ctx.getSource().getPlayer();
+        UUID player;
+        if (playerEntity != null) {
+            player = playerEntity.getUuid();
+        } else {
+            ctx.getSource().sendFeedback(()-> Text.literal("You cannot create a session"), false);
+            return 0;
+        }
         Map<String, Object> defaults = new HashMap<>();
-        for(InteractiveParameter info: parameterInfoMap.values()){
+        for(InteractiveParameter<?> info: parameterInfoMap.values()){
             defaults.put(info.getName(), info.getDefaultVal(ctx));
         }
 
-        if(startArg != null)
-        {
-            Object paramVal = parameterInfoMap.get(startArg.getName()).loadFromCommandContext(ctx);
-            if (paramVal == null)
-            {
-                ctx.getSource().sendFeedback(()-> Text.literal("Invalid value for " + startArg.getName()), false);
-                return 0;
-            }
-            defaults.put(startArg.getName(), paramVal);
-        }
         activeSessions.put(currentId, new InteractiveManager.SessionInfo(player, defaults));
 
         displayInteractive(ctx.getSource(), currentId);
@@ -212,7 +210,8 @@ public class InteractiveManager {
             return false;
         }
         UUID player = activeSessions.get(id).player();
-        if (!player.equals(ctx.getSource().getPlayer().getUuid()))
+        ServerPlayerEntity playerEntity = ctx.getSource().getPlayer();
+        if (playerEntity == null || !player.equals(playerEntity.getUuid()))
         {
             ctx.getSource().sendFeedback(()-> Text.literal("You are not the owner of session"), false);
             return false;

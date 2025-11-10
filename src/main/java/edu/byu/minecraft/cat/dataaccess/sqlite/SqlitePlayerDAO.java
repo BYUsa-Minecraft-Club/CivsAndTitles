@@ -44,9 +44,8 @@ public class SqlitePlayerDAO extends SqliteDAO<Player> implements PlayerDAO {
      */
     @Override
     public UUID insert(Player player) throws DataAccessException {
-        executeUpdate("INSERT INTO player (uuid, username, current_title, role, show_rank) " +
-                "VALUES (?, ?, ?, ?, ?)", player.uuid(), player.name(), player.title(),
-                player.role(), player.showRank());
+        executeUpdate("INSERT INTO player (uuid, username, current_title) " +
+                "VALUES (?, ?, ?)", player.uuid(), player.name(), player.title());
         return player.uuid();
     }
 
@@ -65,19 +64,8 @@ public class SqlitePlayerDAO extends SqliteDAO<Player> implements PlayerDAO {
      */
     @Override
     public void update(Player player) throws DataAccessException {
-        executeUpdate("UPDATE player SET username = ?, current_title = ?, " +
-                "role = ?, show_rank = ? WHERE uuid = ?", player.name(),
-                player.title(), player.role(), player.showRank(), player.uuid());
-    }
-
-    /**
-     * @param role role to find players
-     * @return
-     * @throws DataAccessException
-     */
-    @Override
-    public Collection<Player> getForRole(Player.Role role) throws DataAccessException {
-        return executeQuery("SELECT * FROM player WHERE role = ?", this::parseCollection, role);
+        executeUpdate("UPDATE player SET username = ?, current_title = ? WHERE uuid = ?",
+                player.name(), player.title(), player.uuid());
     }
 
     /**
@@ -102,9 +90,7 @@ public class SqlitePlayerDAO extends SqliteDAO<Player> implements PlayerDAO {
         return new Player(
                 UUID.fromString(rs.getString("uuid")),
                 rs.getString("username"),
-                rs.getString("current_title"),
-                Player.Role.valueOf(rs.getString("role")),
-                rs.getBoolean("show_rank")
+                rs.getString("current_title")
         );
     }
 }

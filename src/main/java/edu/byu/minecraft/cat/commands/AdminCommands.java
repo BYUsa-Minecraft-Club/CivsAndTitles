@@ -1,10 +1,9 @@
 package edu.byu.minecraft.cat.commands;
 
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.BoolArgumentType;
-import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import edu.byu.minecraft.cat.CivsAndTitles;
 import edu.byu.minecraft.cat.commands.interactive.*;
 import edu.byu.minecraft.cat.commands.interactive.parameters.*;
 import edu.byu.minecraft.cat.dataaccess.*;
@@ -34,18 +33,18 @@ public class AdminCommands {
 
         new InteractiveManager(Arrays.asList("titles", "admin", "create"))
                 .addLine(new InteractiveTextLine(Text.literal("Title Creation")))
-                .addLine(new InteractiveParameterLine(new InteractiveStringParameter("Name").setValidater((x)-> {
+                .addLine(new InteractiveParameterLine<>(new InteractiveStringParameter("Name").setValidator((x)-> {
                     try {
                         return getDataAccess().getTitleDAO().get((String)x) == null;
                     } catch (DataAccessException e) {
                         throw new RuntimeException(e); // TODO what is the best think to handle in this error case
                     }
                 })))
-                .addLine(new InteractiveParameterLine(new InteractiveStringParameter("Description", true)))
-                .addLine(new InteractiveParameterLine(new InteractiveStringParameter("Format", true)))
-                .addLine(new InteractiveParameterLine(new InteractiveStringParameter("Type").setSuggestionProvider(SuggestionProviders::titleType).setValidater((x)->{
+                .addLine(new InteractiveParameterLine<>(new InteractiveStringParameter("Description", true)))
+                .addLine(new InteractiveParameterLine<>(new InteractiveTextParameter("Format")))
+                .addLine(new InteractiveParameterLine<>(new InteractiveStringParameter("Type").setSuggestionProvider(SuggestionProviders::titleType).setValidator((x)->{
                     try {
-                        Title.Type.valueOf((String) x);
+                        Title.Type.valueOf(x);
                         return true;
                     }
                     catch (IllegalArgumentException ex) {
@@ -53,19 +52,19 @@ public class AdminCommands {
                     }
 
                 })))
-                .addLine(new InteractiveFinishLine()).setDataHandler(AdminCommands::finishTitleCreation).register(dispatcher);
+                .addLine(new InteractiveFinishLine()).setDataHandler(AdminCommands::finishTitleCreation).register(dispatcher, registryAccess);
 
-        InteractiveParameter tileNameParam = new InteractiveStringParameter("Name").setValidater((x)-> {
+        InteractiveParameter<String> titleNameParam = new InteractiveStringParameter("Name").setValidator((x)-> {
             try {
                 return getDataAccess().getTitleDAO().get((String)x) != null;
             } catch (DataAccessException e) {
                 throw new RuntimeException(e); // TODO what is the best think to handle in this error case
             }
         }).setSuggestionProvider(SuggestionProviders::allTitles);
-        new InteractiveManager(Arrays.asList("titles", "admin", "edit")).setStartArg(tileNameParam)
+        new InteractiveManager(Arrays.asList("titles", "admin", "edit")).setStartArg(titleNameParam)
                 .addLine(new InteractiveTextLine(Text.literal("Title Edit")))
-                .addLine(new InteractiveDisplayLine(tileNameParam))
-                .addLine(new InteractiveParameterLine(new InteractiveStringParameter("Description", true).setDefaultProvider(
+                .addLine(new InteractiveDisplayLine<>(titleNameParam))
+                .addLine(new InteractiveParameterLine<>(new InteractiveStringParameter("Description", true).setDefaultProvider(
                         (ctx)-> {
                             try {
                             return getDataAccess().getTitleDAO().get((String)ctx.getArgument("Name", String.class)).description();
@@ -73,24 +72,24 @@ public class AdminCommands {
                             throw new RuntimeException(e); // TODO what is the best think to handle in this error case
                         }}
                 )))
-                .addLine(new InteractiveParameterLine(new InteractiveStringParameter("Format", true).setDefaultProvider(
+                .addLine(new InteractiveParameterLine<>(new InteractiveTextParameter("Format").setDefaultProvider(
                         (ctx)-> {
                             try {
-                                return getDataAccess().getTitleDAO().get((String)ctx.getArgument("Name", String.class)).color();
+                                return getDataAccess().getTitleDAO().get((String)ctx.getArgument("Name", String.class)).format();
                             } catch (DataAccessException e) {
                                 throw new RuntimeException(e); // TODO what is the best think to handle in this error case
                             }}
                 )))
-                .addLine(new InteractiveParameterLine(new InteractiveStringParameter("Type").setSuggestionProvider(SuggestionProviders::titleType).setDefaultProvider(
+                .addLine(new InteractiveParameterLine<>(new InteractiveStringParameter("Type").setSuggestionProvider(SuggestionProviders::titleType).setDefaultProvider(
                         (ctx)-> {
                             try {
                                 return getDataAccess().getTitleDAO().get((String)ctx.getArgument("Name", String.class)).type().name();
                             } catch (DataAccessException e) {
                                 throw new RuntimeException(e); // TODO what is the best think to handle in this error case
                             }}
-                ).setValidater((x)->{
+                ).setValidator((x)->{
                     try {
-                        Title.Type.valueOf((String) x);
+                        Title.Type.valueOf(x);
                         return true;
                     }
                     catch (IllegalArgumentException ex) {
@@ -98,7 +97,7 @@ public class AdminCommands {
                     }
 
                 })))
-                .addLine(new InteractiveFinishLine()).setDataHandler(AdminCommands::finishTitleEdit).register(dispatcher);
+                .addLine(new InteractiveFinishLine()).setDataHandler(AdminCommands::finishTitleEdit).register(dispatcher, registryAccess);
 
 
 
@@ -107,7 +106,7 @@ public class AdminCommands {
 
     private static Integer finishTitleCreation(CommandContext<ServerCommandSource> ctx, Map<String, Object> parameters){
         String name = (String)parameters.get("Name");
-        String format = (String) parameters.get("Format");
+        Text format = (Text) parameters.get("Format");
         String type = (String)parameters.get("Type");
         String description = (String)parameters.get("Description");
 
@@ -127,6 +126,7 @@ public class AdminCommands {
             }
             ctx.getSource().sendFeedback(()->Text.literal("Created Title: " + name), false);
         } catch (DataAccessException e) {
+            CivsAndTitles.LOGGER.error(e.toString());
             ctx.getSource().sendFeedback(()->Text.literal("Unable to access the database. Try again later."), false);
             return 0;
         }
@@ -136,7 +136,7 @@ public class AdminCommands {
 
     private static Integer finishTitleEdit(CommandContext<ServerCommandSource> ctx, Map<String, Object> parameters){
         String name = (String)parameters.get("Name");
-        String format = (String) parameters.get("Format");
+        Text format = (Text) parameters.get("Format");
         String type = (String)parameters.get("Type");
         String description = (String)parameters.get("Description");
 
@@ -157,6 +157,7 @@ public class AdminCommands {
             }
             ctx.getSource().sendFeedback(()->Text.literal("Submitted Edit for Title: " + name), false);
         } catch (DataAccessException e) {
+            CivsAndTitles.LOGGER.error(e.toString());
             ctx.getSource().sendFeedback(()->Text.literal("Unable to access the database. Try again later."), false);
             return 0;
         }
@@ -186,6 +187,7 @@ public class AdminCommands {
             UnlockedTitle unlockedTitle = new UnlockedTitle(playerId, title, LocalDate.now().toString());
             unlockedTitleDAO.insert(unlockedTitle);
         } catch (DataAccessException e) {
+            CivsAndTitles.LOGGER.error(e.toString());
             ctx.getSource().sendFeedback(()->Text.literal("Unable to access the database. Try again later."), false);
         }
         ctx.getSource().sendFeedback(()-> Text.literal("Giving " + player + " title "+ title), false);
@@ -199,42 +201,42 @@ public class AdminCommands {
      * @param ctx
      * @return
      */
-    public static Integer addTitle(CommandContext<ServerCommandSource> ctx) {
-        ctx.getSource().sendFeedback(()-> Text.literal("Adding Title"), false);
-        String titleName = ctx.getArgument("TitleName", String.class);
-        String titleDescription = ctx.getArgument("Description", String.class);
-        String titleType = ctx.getArgument("Type", String.class);
-
-
-        TitleDAO titleDAO;
-        try {
-            titleDAO = getDataAccess().getTitleDAO();
-            if(titleDAO.get(titleName) != null){
-                ctx.getSource().sendFeedback(()->Text.literal("Title with name "+ titleName + "already exists"), false);
-                return 0;
-            }
-            Title.Type type = Title.Type.valueOf(titleType);
-            titleDAO.update(new Title(titleName, "Blue", titleDescription, type));
-            if(type == Title.Type.DEFAULT) // if default grant to all players
-            {
-                Collection<Player> players = getDataAccess().getPlayerDAO().getAll();
-                UnlockedTitleDAO unlockedTitleDAO = getDataAccess().getUnlockedTitleDAO();;
-                for (Player x: players){
-                    unlockedTitleDAO.insert(new UnlockedTitle(x.uuid(), titleName, LocalDate.now().toString()));
-                }
-            }
-        } catch (DataAccessException ex){
-            ctx.getSource().sendFeedback(()->Text.literal("Unable to access the database. Try again later."), false);
-            return 0;
-        } catch (IllegalArgumentException ex){
-            ctx.getSource().sendFeedback(()->Text.literal("Title type " + titleType + " is not a vaild type"), false);
-            return 0;
-        }
-
-
-
-        return 1;
-    }
+//    public static Integer addTitle(CommandContext<ServerCommandSource> ctx) {
+//        ctx.getSource().sendFeedback(()-> Text.literal("Adding Title"), false);
+//        String titleName = ctx.getArgument("TitleName", String.class);
+//        String titleDescription = ctx.getArgument("Description", String.class);
+//        String titleType = ctx.getArgument("Type", String.class);
+//
+//
+//        TitleDAO titleDAO;
+//        try {
+//            titleDAO = getDataAccess().getTitleDAO();
+//            if(titleDAO.get(titleName) != null){
+//                ctx.getSource().sendFeedback(()->Text.literal("Title with name "+ titleName + "already exists"), false);
+//                return 0;
+//            }
+//            Title.Type type = Title.Type.valueOf(titleType);
+//            titleDAO.update(new Title(titleName, "Blue", titleDescription, type));
+//            if(type == Title.Type.DEFAULT) // if default grant to all players
+//            {
+//                Collection<Player> players = getDataAccess().getPlayerDAO().getAll();
+//                UnlockedTitleDAO unlockedTitleDAO = getDataAccess().getUnlockedTitleDAO();;
+//                for (Player x: players){
+//                    unlockedTitleDAO.insert(new UnlockedTitle(x.uuid(), titleName, LocalDate.now().toString()));
+//                }
+//            }
+//        } catch (DataAccessException ex){
+//            ctx.getSource().sendFeedback(()->Text.literal("Unable to access the database. Try again later."), false);
+//            return 0;
+//        } catch (IllegalArgumentException ex){
+//            ctx.getSource().sendFeedback(()->Text.literal("Title type " + titleType + " is not a vaild type"), false);
+//            return 0;
+//        }
+//
+//
+//
+//        return 1;
+//    }
 
     /***
      * Removes a title from a player.
@@ -267,6 +269,7 @@ public class AdminCommands {
                 playerDAO.update(playerObj);
             }
         } catch (DataAccessException e) {
+            CivsAndTitles.LOGGER.error(e.toString());
             ctx.getSource().sendFeedback(()->Text.literal("Unable to access the database. Try again later."), false);
         }
         ctx.getSource().sendFeedback(()-> Text.literal("removing " + player + " title "+ title), false);
@@ -291,6 +294,7 @@ public class AdminCommands {
             titleDAO.delete(title);
 
         } catch (DataAccessException e) {
+            CivsAndTitles.LOGGER.error(e.toString());
             ctx.getSource().sendFeedback(()->Text.literal("Unable to access the database. Try again later."), false);
         }
         ctx.getSource().sendFeedback(()-> Text.literal("removing title "+ title), false);
@@ -316,12 +320,14 @@ public class AdminCommands {
                             }
                     );
 
-                } catch (DataAccessException ignored) {
+                } catch (DataAccessException e) {
+                    CivsAndTitles.LOGGER.warn(e.toString());
                 }
             });
 
 
         } catch (DataAccessException e) {
+            CivsAndTitles.LOGGER.error(e.toString());
             ctx.getSource().sendFeedback(()->Text.literal("Unable to access the database. Try again later."), false);
         }
         ctx.getSource().sendFeedback(()-> Text.literal("removing world titles from all players" ), false);

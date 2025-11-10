@@ -1,6 +1,7 @@
 package edu.byu.minecraft.cat.commands.interactive;
 
 import edu.byu.minecraft.cat.commands.interactive.parameters.InteractiveParameter;
+import joptsimple.ValueConversionException;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
@@ -11,9 +12,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-public class InteractiveParameterLine implements InteractiveLine{
-    private InteractiveParameter param;
-    public InteractiveParameterLine(InteractiveParameter param){
+public class InteractiveParameterLine<T> implements InteractiveLine<T> {
+    private InteractiveParameter<T> param;
+    public InteractiveParameterLine(InteractiveParameter<T> param){
         this.param = param;
     }
 
@@ -22,15 +23,18 @@ public class InteractiveParameterLine implements InteractiveLine{
         String paramName = param.getName();
         MutableText root = Text.literal("");
         MutableText argText = Text.literal(paramName+": ");
-        MutableText valueText;
+        Text valueText;
         Object paramVal = parameters.get(paramName);
         if(paramVal != null) {
-            valueText = Text.literal(param.displayString(paramVal));
-            valueText.setStyle(Style.EMPTY.withColor(Formatting.GREEN));
+            try {
+                valueText = param.tryDisplayText(paramVal);
+            } catch (ClassCastException e) {
+                // Someone messed up
+                throw new ValueConversionException("Invalid type in field \"" + paramName + "\"", e);
+            }
         }
         else {
-            valueText = Text.literal("UNSET");
-            valueText.setStyle(Style.EMPTY.withColor(Formatting.RED));
+            valueText = Text.literal("UNSET").setStyle(Style.EMPTY.withColor(Formatting.RED));
         }
         MutableText clickText = Text.literal(" (SET)");
         clickText.setStyle(Style.EMPTY.withColor(Formatting.YELLOW).withClickEvent(new ClickEvent.SuggestCommand(builder.makeSetCommand(paramName)
@@ -39,7 +43,7 @@ public class InteractiveParameterLine implements InteractiveLine{
     }
 
     @Override
-    public Collection<InteractiveParameter> getLineParameters() {
+    public Collection<InteractiveParameter<T>> getLineParameters() {
         return Collections.singletonList(param);
     }
 }

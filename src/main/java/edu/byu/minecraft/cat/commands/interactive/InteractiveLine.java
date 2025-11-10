@@ -6,7 +6,7 @@ import net.minecraft.text.Text;
 import java.util.Collection;
 import java.util.Map;
 
-public interface InteractiveLine {
+public interface InteractiveLine<T> {
     Text getText(Map<String, Object> parameters, InteractiveCommandBuilder commandBuilder);
-    Collection<InteractiveParameter> getLineParameters();
+    Collection<InteractiveParameter<T>> getLineParameters();
 }

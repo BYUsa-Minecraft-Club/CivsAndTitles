@@ -5,6 +5,7 @@ import edu.byu.minecraft.cat.dataaccess.DataAccessException;
 import edu.byu.minecraft.cat.model.Player;
 import edu.byu.minecraft.cat.model.UnlockedTitle;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.Collection;
 import java.util.UUID;
@@ -31,15 +32,8 @@ public class PermissionCheckers {
      * @return
      */
     public static boolean isAdmin(ServerCommandSource src) {
-        UUID pl = src.getPlayer().getUuid();
-        try {
-            Player player = CivsAndTitles.getDataAccess().getPlayerDAO().get(pl);
-            if(player == null) {
-                return false;
-            }
-            return player.role() == Player.Role.ADMIN;
-        } catch (DataAccessException e) {
-            throw new RuntimeException(e);
-        }
+        ServerPlayerEntity player = src.getPlayer();
+        if (player == null) return false;
+        return src.getPlayer().getPermissionLevel() > 2;
     }
 }

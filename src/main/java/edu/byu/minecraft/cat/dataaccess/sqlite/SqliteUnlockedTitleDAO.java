@@ -44,7 +44,7 @@ public class SqliteUnlockedTitleDAO extends SqliteDAO<UnlockedTitle> implements 
      */
     @Override
     public void insert(UnlockedTitle title) throws DataAccessException {
-        executeUpdate("INSERT INTO player_title (player_uuid, title, date_earned) VALUES (?, ?, ?)",
+        executeUpdate("INSERT OR IGNORE INTO player_title (player_uuid, title, date_earned) VALUES (?, ?, ?)",
                 title.uuid(), title.title(), title.earned());
     }
 

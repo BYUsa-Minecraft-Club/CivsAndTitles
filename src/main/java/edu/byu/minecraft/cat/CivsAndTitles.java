@@ -9,7 +9,6 @@ import edu.byu.minecraft.cat.dataaccess.sqlite.SqliteDataAccess;
 import edu.byu.minecraft.cat.model.Player;
 import edu.byu.minecraft.cat.model.Title;
 import edu.byu.minecraft.cat.model.UnlockedTitle;
-import eu.pb4.placeholders.api.parsers.TagParser;
 import net.fabricmc.api.ModInitializer;
 
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -18,7 +17,6 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,10 +63,10 @@ public class CivsAndTitles implements ModInitializer {
 		Placeholders.register(
 				Identifier.of("byu", "title"),
 				(ctx, arg) -> {
-					if (!ctx.hasPlayer())
+                    ServerPlayerEntity serverPlayer = ctx.player();
+					if (serverPlayer == null)
 						return PlaceholderResult.invalid("No player!");
 					try {
-						ServerPlayerEntity serverPlayer = ctx.player();
 						Player dbPlayer = getDataAccess().getPlayerDAO().get(serverPlayer.getUuid());
 						TitleDAO titleDAO = getDataAccess().getTitleDAO();
 
@@ -76,8 +74,7 @@ public class CivsAndTitles implements ModInitializer {
 						if (title == null){
 							return 	PlaceholderResult.value("");
 						}
-						return 	PlaceholderResult.value(TagParser.SIMPLIFIED_TEXT_FORMAT_SAFE.parseText(title.color()+ " ", ctx.asParserContext()));
-
+                        return PlaceholderResult.value(title.format().copy().append(" "));
 					} catch (DataAccessException e) {
 						return PlaceholderResult.invalid("Database Error!");
 					}
@@ -90,10 +87,9 @@ public class CivsAndTitles implements ModInitializer {
 		try {
 			ServerPlayerEntity serverPlayer = serverPlayNetworkHandler.getPlayer();
 			Player dbPlayer = getDataAccess().getPlayerDAO().get(serverPlayer.getUuid());
-			UnlockedTitleDAO unlockedTitleDAO = getDataAccess().getUnlockedTitleDAO();;
+			UnlockedTitleDAO unlockedTitleDAO = getDataAccess().getUnlockedTitleDAO();
 			if (dbPlayer == null) {
-				dbPlayer = new Player(serverPlayer.getUuid(), serverPlayer.getNameForScoreboard(), null,
-						Player.Role.PLAYER, true);
+				dbPlayer = new Player(serverPlayer.getUuid(), serverPlayer.getNameForScoreboard(), null);
 				getDataAccess().getPlayerDAO().insert(dbPlayer);
 				List<Title> defaultTitles = getDataAccess().getTitleDAO().getAll().stream().filter(x -> x.type() == Title.Type.DEFAULT).toList();
 				for (Title x: defaultTitles){
@@ -103,7 +99,7 @@ public class CivsAndTitles implements ModInitializer {
 			}
 			else if (!serverPlayer.getNameForScoreboard().equals(dbPlayer.name())) {
 				dbPlayer = new Player(serverPlayer.getUuid(), serverPlayer.getNameForScoreboard(),
-						dbPlayer.title(), dbPlayer.role(), dbPlayer.showRank());
+						dbPlayer.title());
 				getDataAccess().getPlayerDAO().update(dbPlayer);
 			}
 		} catch (DataAccessException e) {

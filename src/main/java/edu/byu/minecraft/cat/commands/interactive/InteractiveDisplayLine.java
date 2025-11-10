@@ -1,6 +1,8 @@
 package edu.byu.minecraft.cat.commands.interactive;
 
 import edu.byu.minecraft.cat.commands.interactive.parameters.InteractiveParameter;
+import edu.byu.minecraft.cat.commands.interactive.parameters.InteractiveTextParameter;
+import joptsimple.ValueConversionException;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
@@ -11,9 +13,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-public class InteractiveDisplayLine implements InteractiveLine{
-    private InteractiveParameter param;
-    public InteractiveDisplayLine(InteractiveParameter param){
+public class InteractiveDisplayLine<T> implements InteractiveLine<T> {
+    private InteractiveParameter<T> param;
+    public InteractiveDisplayLine(InteractiveParameter<T> param){
         this.param = param;
     }
 
@@ -22,21 +24,24 @@ public class InteractiveDisplayLine implements InteractiveLine{
         String paramName = param.getName();
         MutableText root = Text.literal("");
         MutableText argText = Text.literal(paramName+": ");
-        MutableText valueText;
+        Text valueText;
         Object paramVal = parameters.get(paramName);
         if(paramVal != null) {
-            valueText = Text.literal(param.displayString(paramVal));
-            valueText.setStyle(Style.EMPTY.withColor(Formatting.GREEN));
+            try {
+                valueText = param.tryDisplayText(paramVal);
+            } catch (ClassCastException e) {
+                // I have no idea how we messed up so badly to get here
+                throw new ValueConversionException("Invalid type in field \"" + paramName + "\"", e);
+            }
         }
         else {
-            valueText = Text.literal("UNSET");
-            valueText.setStyle(Style.EMPTY.withColor(Formatting.RED));
+            valueText = Text.literal("UNSET").setStyle(Style.EMPTY.withColor(Formatting.RED));
         }
         return root.append(argText).append(valueText);
     }
 
     @Override
-    public Collection<InteractiveParameter> getLineParameters() {
+    public Collection<InteractiveParameter<T>> getLineParameters() {
         return Collections.singletonList(param);
     }
 }
