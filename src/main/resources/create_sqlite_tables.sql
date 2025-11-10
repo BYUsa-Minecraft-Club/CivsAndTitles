@@ -3,7 +3,8 @@ CREATE TABLE IF NOT EXISTS title
     name        TEXT NOT NULL PRIMARY KEY,
     format      TEXT NOT NULL,
     description TEXT NOT NULL,
-    type        TEXT NOT NULL
+    type        TEXT NOT NULL,
+    advancement TEXT
 );
 
 CREATE TABLE IF NOT EXISTS player
