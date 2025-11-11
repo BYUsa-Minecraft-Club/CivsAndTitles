@@ -13,6 +13,7 @@ import net.minecraft.util.Identifier;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.List;
 
 public class SqliteTitleDAO extends SqliteDAO<Title> implements TitleDAO {
 
@@ -93,5 +94,10 @@ public class SqliteTitleDAO extends SqliteDAO<Title> implements TitleDAO {
                 Title.Type.valueOf(rs.getString("type")),
                 Identifier.of(rs.getString("advancement"))
         );
+    }
+
+    @Override
+    public Collection<Title> getAllTitlesByAdvancement(String advancement) throws DataAccessException {
+        return executeQuery("SELECT * FROM title WHERE advancement = ?", this::parseCollection, advancement);
     }
 }
