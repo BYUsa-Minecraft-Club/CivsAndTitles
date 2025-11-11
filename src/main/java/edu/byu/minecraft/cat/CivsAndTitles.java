@@ -5,6 +5,8 @@ import edu.byu.minecraft.cat.dataaccess.DataAccess;
 import edu.byu.minecraft.cat.dataaccess.DataAccessException;
 import edu.byu.minecraft.cat.dataaccess.TitleDAO;
 import edu.byu.minecraft.cat.dataaccess.UnlockedTitleDAO;
+import edu.byu.minecraft.cat.dataaccess.none.NoneDataAccess;
+import edu.byu.minecraft.cat.dataaccess.postgres.PostgresDataAccess;
 import edu.byu.minecraft.cat.dataaccess.sqlite.SqliteDataAccess;
 import edu.byu.minecraft.cat.model.Player;
 import edu.byu.minecraft.cat.model.Title;
@@ -51,11 +53,10 @@ public class CivsAndTitles implements ModInitializer {
 		// Proceed with mild caution.
 
         try {
-            setDataAccess(new SqliteDataAccess());
+            setDataAccess(new PostgresDataAccess());
         } catch (DataAccessException e) {
             throw new RuntimeException(e);
         }
-        LOGGER.info("Hello Fabric world!");
 		CommandRegistrationCallback.EVENT.register(TitleCommands::registerCommands);
 		CommandRegistrationCallback.EVENT.register(AdminCommands::registerCommands);
 

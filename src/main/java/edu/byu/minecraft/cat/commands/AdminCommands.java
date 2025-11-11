@@ -14,7 +14,6 @@ import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-import org.jetbrains.annotations.Nullable;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -27,11 +26,11 @@ public class AdminCommands {
     public static void registerCommands(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registryAccess, CommandManager.RegistrationEnvironment environment) {
         dispatcher.register(literal("titles").then(literal("admin").requires(ServerCommandSource::isExecutedByPlayer).requires(src -> src.hasPermissionLevel(2))
 
-       //         .then(literal("addTitle").then(argument("TitleName", StringArgumentType.string()).then(argument("TitleType",StringArgumentType.string()).suggests(SuggestionProviders::titleType).then(argument("Description", StringArgumentType.greedyString()).executes(AdminCommands::addTitle)))))
-                .then(literal("giveTitle").then(argument("playerName", StringArgumentType.string()).suggests(SuggestionProviders::allPlayers).then(argument("title", StringArgumentType.string()).suggests(SuggestionProviders::allTitles).executes(AdminCommands::bestowTitle))))
-                .then(literal("revokeTitle").then(argument("playerName", StringArgumentType.string()).suggests(SuggestionProviders::allPlayers).then(argument("title", StringArgumentType.string()).suggests(SuggestionProviders::allTitles).executes(AdminCommands::revokeTitle))))
+                .then(literal("giveTitle").then(argument("playerName", StringArgumentType.string()).suggests(SuggestionProviders::allPlayers).then(argument("title", StringArgumentType.string()).suggests(SuggestionProviders::playerUnawardedTitles).executes(AdminCommands::bestowTitle))))
+                .then(literal("revokeTitle").then(argument("playerName", StringArgumentType.string()).suggests(SuggestionProviders::allPlayers).then(argument("title", StringArgumentType.string()).suggests(SuggestionProviders::playersRemovableTitles).executes(AdminCommands::revokeTitle))))
                 .then(literal("deleteTitle").then(argument("title", StringArgumentType.string()).suggests(SuggestionProviders::allTitles).executes(AdminCommands::removeTitle)))
                 .then(literal("clearWorldTitles").executes(AdminCommands::clearWorldTitles))
+                .then(literal("breakpoint").executes(AdminCommands::debugCommand))
         ));
 
         new InteractiveManager(Arrays.asList("titles", "admin", "create"))
@@ -104,7 +103,9 @@ public class AdminCommands {
                 .addLine(new InteractiveParameterLine<>(new InteractiveAdvancementParameter("Advancement").setOptional(true)
                         .setDefaultProvider((ctx) -> {
                             try {
-                                return new AdvancementEntry(getDataAccess().getTitleDAO().get(ctx.getArgument("Name", String.class)).advancement(), null);
+                                Optional<Identifier> advancement = getDataAccess().getTitleDAO().get(ctx.getArgument("Name", String.class)).advancement();
+                                if (advancement.isPresent()) return new AdvancementEntry(getDataAccess().getTitleDAO().get(ctx.getArgument("Name", String.class)).advancement().orElse(null), null);
+                                else return null;
                             } catch (DataAccessException e) {
                                 throw new RuntimeException(e);
                             }
@@ -115,6 +116,10 @@ public class AdminCommands {
 
     }
 
+    private static Integer debugCommand(CommandContext<ServerCommandSource> ctx) {
+        DataAccess dataAccess = getDataAccess();
+        return 1;
+    }
 
     private static Integer finishTitleCreation(CommandContext<ServerCommandSource> ctx, Map<String, Object> parameters){
         String name = (String)parameters.get("Name");
@@ -122,8 +127,7 @@ public class AdminCommands {
         String type = (String)parameters.get("Type");
         String description = (String)parameters.get("Description");
         AdvancementEntry advancementEntry = (AdvancementEntry) parameters.get("Advancement");
-        Identifier advancement = null;
-        if (advancementEntry != null) advancement = advancementEntry.id();
+        Optional<Identifier> advancement = advancementEntry == null ? Optional.empty() : Optional.of(advancementEntry.id());
 
         try {
             TitleDAO titles = getDataAccess().getTitleDAO();
@@ -154,8 +158,7 @@ public class AdminCommands {
         String type = (String)parameters.get("Type");
         String description = (String)parameters.get("Description");
         AdvancementEntry advancementEntry = (AdvancementEntry) parameters.get("Advancement");
-        Identifier advancement = null;
-        if (advancementEntry != null) advancement = advancementEntry.id();
+        Optional<Identifier> advancement = advancementEntry == null ? Optional.empty() : Optional.of(advancementEntry.id());
 
         try {
             TitleDAO titles = getDataAccess().getTitleDAO();
@@ -209,8 +212,6 @@ public class AdminCommands {
         ctx.getSource().sendFeedback(()-> Text.literal("Giving " + player + " title "+ title), false);
         return 1;
     }
-
-
 
     /***
      * Adds a title into the system.

@@ -17,4 +17,11 @@ public interface PlayerDAO extends SimpleDAO<Player, UUID> {
      */
     UUID getPlayerUUID (String username) throws DataAccessException;
 
+    default Player get(String username) throws DataAccessException {
+        UUID id = getPlayerUUID(username);
+        if (id != null) {
+            return get(id);
+        }
+        return null;
+    }
 }

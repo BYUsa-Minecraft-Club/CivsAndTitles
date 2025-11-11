@@ -7,6 +7,7 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -15,6 +16,8 @@ public abstract class InteractiveParameter<T> {
     final Class<T> type;
     String name;
     SuggestionProvider<ServerCommandSource> suggestionProvider;
+
+    @Nullable
     T defaultVal;
     Function<CommandContext<ServerCommandSource>, T> defaultValProvider;
 

@@ -100,7 +100,7 @@ public class TitleCommands {
                     }
                     text.append("\n");
                     if(player.getPermissionLevel() >= 2) {
-                        text.append(Text.literal("(Edit)").setStyle(Style.EMPTY.withColor(Formatting.YELLOW).withClickEvent(new ClickEvent.RunCommand("titles admin edit " +title.title()))));
+                        text.append(Text.literal("(Edit)").setStyle(Style.EMPTY.withColor(Formatting.YELLOW).withClickEvent(new ClickEvent.RunCommand("titles admin edit start " +title.title()))));
                     }
                 } catch (DataAccessException e) {
                     ctx.getSource().sendFeedback(() -> Text.literal("Unable to access the database. Try again later."), false);

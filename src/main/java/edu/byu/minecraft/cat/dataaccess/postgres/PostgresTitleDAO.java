@@ -1,29 +1,32 @@
-package edu.byu.minecraft.cat.dataaccess.sqlite;
+package edu.byu.minecraft.cat.dataaccess.postgres;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.mojang.serialization.JsonOps;
 import edu.byu.minecraft.cat.dataaccess.DataAccessException;
 import edu.byu.minecraft.cat.dataaccess.TitleDAO;
+import edu.byu.minecraft.cat.dataaccess.sqlite.SqliteDAO;
 import edu.byu.minecraft.cat.model.Title;
 import net.minecraft.text.Text;
 import net.minecraft.text.TextCodecs;
 import net.minecraft.util.Identifier;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 
-public class SqliteTitleDAO extends SqliteDAO<Title> implements TitleDAO {
+public class PostgresTitleDAO extends PostgresDAO<Title> implements TitleDAO {
+
 
     /**
-     * Constructs a new sqlite DAO. If the database file doesn't already exist it is created
+     * Constructs a new postgresql DAO
      *
-     * @throws DataAccessException if the database file could not be created
+     * @param database
      */
-    protected SqliteTitleDAO() throws DataAccessException {
+    protected PostgresTitleDAO(PostgresDataAccess database) {
+        super(database);
     }
 
     /**
@@ -33,7 +36,7 @@ public class SqliteTitleDAO extends SqliteDAO<Title> implements TitleDAO {
      */
     @Override
     public Title get(String s) throws DataAccessException {
-        return executeQuery("SELECT * FROM title WHERE name = ?", this::parseSingle, s);
+        return database.executeQuery("SELECT * FROM title WHERE name = ?", this::parseSingle, s);
     }
 
     /**
@@ -42,7 +45,7 @@ public class SqliteTitleDAO extends SqliteDAO<Title> implements TitleDAO {
      */
     @Override
     public Collection<Title> getAll() throws DataAccessException {
-        return executeQuery("SELECT * FROM title", this::parseCollection);
+        return database.executeQuery("SELECT * FROM title", this::parseCollection);
     }
 
     /**
@@ -53,7 +56,7 @@ public class SqliteTitleDAO extends SqliteDAO<Title> implements TitleDAO {
     @Override
     public String insert(Title title) throws DataAccessException {
         String format = TextCodecs.CODEC.encodeStart(JsonOps.INSTANCE,title.format()).getOrThrow().toString();
-        executeUpdate("INSERT INTO title (name, format, description, type, advancement) VALUES (?, ?, ?, ?, ?)",
+        database.executeUpdate("INSERT INTO title (name, format, description, type, advancement) VALUES (?, ?, ?, ?, ?)",
                 title.title(), format, title.description(), title.type().name(), title.advancement().map(Identifier::toString).orElse(null));
         return title.title();
     }
@@ -64,7 +67,7 @@ public class SqliteTitleDAO extends SqliteDAO<Title> implements TitleDAO {
      */
     @Override
     public void delete(String s) throws DataAccessException {
-        executeUpdate("DELETE FROM title WHERE name = ?", s);
+        database.executeUpdate("DELETE FROM title WHERE name = ?", s);
     }
 
     /**
@@ -74,7 +77,7 @@ public class SqliteTitleDAO extends SqliteDAO<Title> implements TitleDAO {
     @Override
     public void update(Title title) throws DataAccessException {
         String format = TextCodecs.CODEC.encodeStart(JsonOps.INSTANCE,title.format()).getOrThrow().toString();
-        executeUpdate("UPDATE title SET format = ?, description = ?, type = ?, advancement = ? WHERE name = ?",
+        database.executeUpdate("UPDATE title SET format = ?, description = ?, type = ?, advancement = ? WHERE name = ?",
                 format, title.description(), title.type().name(), title.advancement().map(Identifier::toString).orElse(null), title.title());
     }
 
@@ -100,6 +103,6 @@ public class SqliteTitleDAO extends SqliteDAO<Title> implements TitleDAO {
 
     @Override
     public Collection<Title> getAllTitlesByAdvancement(String advancement) throws DataAccessException {
-        return executeQuery("SELECT * FROM title WHERE advancement = ?", this::parseCollection, advancement);
+        return database.executeQuery("SELECT * FROM title WHERE advancement = ?", this::parseCollection, advancement);
     }
 }

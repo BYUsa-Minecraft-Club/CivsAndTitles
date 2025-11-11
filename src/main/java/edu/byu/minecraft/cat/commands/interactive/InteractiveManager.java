@@ -181,7 +181,7 @@ public class InteractiveManager {
         }
     }
 
-    private Integer startInteractive (CommandContext<ServerCommandSource> ctx){
+    private Integer startInteractive (CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
         ServerPlayerEntity playerEntity = ctx.getSource().getPlayer();
         UUID player;
         if (playerEntity != null) {
@@ -193,6 +193,9 @@ public class InteractiveManager {
         Map<String, Object> defaults = new HashMap<>();
         for(InteractiveParameter<?> info: parameterInfoMap.values()){
             defaults.put(info.getName(), info.getDefaultVal(ctx));
+        }
+        if (startArg != null) {
+            defaults.put(startArg.getName(), startArg.loadFromCommandContext(ctx));
         }
 
         activeSessions.put(currentId, new InteractiveManager.SessionInfo(player, defaults));

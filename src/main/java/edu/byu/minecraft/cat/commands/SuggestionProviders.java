@@ -13,9 +13,11 @@ import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class SuggestionProviders {
@@ -38,6 +40,7 @@ public class SuggestionProviders {
             Stream<String> titleTypes = Arrays.stream(Title.Type.values()).map(Title.Type::name);
             return suggest(filter(titleTypes, builder), builder, String.class);
     }
+
 
     public static CompletableFuture<Suggestions> myTitles(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
         ServerPlayerEntity player = ctx.getSource().getPlayer();
@@ -67,6 +70,20 @@ public class SuggestionProviders {
             return suggest(filter(titles, builder), builder, String.class);
         } catch (DataAccessException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public static CompletableFuture<Suggestions> playerUnawardedTitles(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
+        String playerName = ctx.getArgument("playerName", String.class);
+        try {
+            UUID uuid = CivsAndTitles.getDataAccess().getPlayerDAO().getPlayerUUID(playerName);
+            Set<String> owned = CivsAndTitles.getDataAccess().getUnlockedTitleDAO().getAll(uuid).stream()
+                    .map(UnlockedTitle::title).collect(Collectors.toSet());
+            Stream<String> unowned = CivsAndTitles.getDataAccess().getTitleDAO().getAll().stream()
+                    .map(Title::title).filter(i -> !owned.contains(i));
+            return suggest(filter(unowned, builder), builder, String.class);
+        } catch (DataAccessException e) {
+            return builder.buildFuture();
         }
     }
 
