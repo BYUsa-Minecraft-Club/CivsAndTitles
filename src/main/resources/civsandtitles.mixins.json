@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "edu.byu.minecraft.cat.mixins",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "PlayerAdvancementTrackerMixin"
+  ],
+  "client": [],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}

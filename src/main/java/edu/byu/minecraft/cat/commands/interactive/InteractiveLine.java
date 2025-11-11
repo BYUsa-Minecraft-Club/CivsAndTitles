@@ -9,4 +9,8 @@ import java.util.Map;
 public interface InteractiveLine<T> {
     Text getText(Map<String, Object> parameters, InteractiveCommandBuilder commandBuilder);
     Collection<InteractiveParameter<T>> getLineParameters();
+
+    default Text getText(Map<String, Object> parameters, InteractiveCommandBuilder commandBuilder, Map<String, InteractiveParameter<?>> parameterInfoMap) {
+        return getText(parameters, commandBuilder);
+    }
 }

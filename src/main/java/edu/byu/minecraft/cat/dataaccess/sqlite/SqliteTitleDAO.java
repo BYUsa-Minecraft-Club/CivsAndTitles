@@ -8,10 +8,12 @@ import edu.byu.minecraft.cat.dataaccess.TitleDAO;
 import edu.byu.minecraft.cat.model.Title;
 import net.minecraft.text.Text;
 import net.minecraft.text.TextCodecs;
+import net.minecraft.util.Identifier;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.List;
 
 public class SqliteTitleDAO extends SqliteDAO<Title> implements TitleDAO {
 
@@ -50,8 +52,8 @@ public class SqliteTitleDAO extends SqliteDAO<Title> implements TitleDAO {
     @Override
     public String insert(Title title) throws DataAccessException {
         String format = TextCodecs.CODEC.encodeStart(JsonOps.INSTANCE,title.format()).getOrThrow().toString();
-        executeUpdate("INSERT INTO title (name, format, description, type) VALUES (?, ?, ?, ?)",
-                title.title(), format, title.description(), title.type().name());
+        executeUpdate("INSERT INTO title (name, format, description, type, advancement) VALUES (?, ?, ?, ?, ?)",
+                title.title(), format, title.description(), title.type().name(), title.advancement().toString());
         return title.title();
     }
 
@@ -71,8 +73,8 @@ public class SqliteTitleDAO extends SqliteDAO<Title> implements TitleDAO {
     @Override
     public void update(Title title) throws DataAccessException {
         String format = TextCodecs.CODEC.encodeStart(JsonOps.INSTANCE,title.format()).getOrThrow().toString();
-        executeUpdate("UPDATE title SET format = ?, description = ?, type = ? WHERE name = ?",
-                format, title.description(), title.type().name(), title.title());
+        executeUpdate("UPDATE title SET format = ?, description = ?, type = ?, advancement = ? WHERE name = ?",
+                format, title.description(), title.type().name(), title.advancement().toString(), title.title());
     }
 
     /**
@@ -89,7 +91,13 @@ public class SqliteTitleDAO extends SqliteDAO<Title> implements TitleDAO {
                 rs.getString("name"),
                 format,
                 rs.getString("description"),
-                Title.Type.valueOf(rs.getString("type"))
+                Title.Type.valueOf(rs.getString("type")),
+                Identifier.of(rs.getString("advancement"))
         );
+    }
+
+    @Override
+    public Collection<Title> getAllTitlesByAdvancement(String advancement) throws DataAccessException {
+        return executeQuery("SELECT * FROM title WHERE advancement = ?", this::parseCollection, advancement);
     }
 }

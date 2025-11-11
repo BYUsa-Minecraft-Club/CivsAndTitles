@@ -8,10 +8,13 @@ import edu.byu.minecraft.cat.commands.interactive.*;
 import edu.byu.minecraft.cat.commands.interactive.parameters.*;
 import edu.byu.minecraft.cat.dataaccess.*;
 import edu.byu.minecraft.cat.model.*;
+import net.minecraft.advancement.AdvancementEntry;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
+import org.jetbrains.annotations.Nullable;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -52,6 +55,7 @@ public class AdminCommands {
                     }
 
                 })))
+                .addLine(new InteractiveParameterLine<>(new InteractiveAdvancementParameter("Advancement").setOptional(true)))
                 .addLine(new InteractiveFinishLine()).setDataHandler(AdminCommands::finishTitleCreation).register(dispatcher, registryAccess);
 
         InteractiveParameter<String> titleNameParam = new InteractiveStringParameter("Name").setValidator((x)-> {
@@ -97,6 +101,14 @@ public class AdminCommands {
                     }
 
                 })))
+                .addLine(new InteractiveParameterLine<>(new InteractiveAdvancementParameter("Advancement").setOptional(true)
+                        .setDefaultProvider((ctx) -> {
+                            try {
+                                return new AdvancementEntry(getDataAccess().getTitleDAO().get(ctx.getArgument("Name", String.class)).advancement(), null);
+                            } catch (DataAccessException e) {
+                                throw new RuntimeException(e);
+                            }
+                        })))
                 .addLine(new InteractiveFinishLine()).setDataHandler(AdminCommands::finishTitleEdit).register(dispatcher, registryAccess);
 
 
@@ -109,11 +121,13 @@ public class AdminCommands {
         Text format = (Text) parameters.get("Format");
         String type = (String)parameters.get("Type");
         String description = (String)parameters.get("Description");
-
+        AdvancementEntry advancementEntry = (AdvancementEntry) parameters.get("Advancement");
+        Identifier advancement = null;
+        if (advancementEntry != null) advancement = advancementEntry.id();
 
         try {
             TitleDAO titles = getDataAccess().getTitleDAO();
-            Title newTitle = new Title(name, format, description, Title.Type.valueOf(type));
+            Title newTitle = new Title(name, format, description, Title.Type.valueOf(type), advancement);
             titles.insert(newTitle);
 
             if(newTitle.type() == Title.Type.DEFAULT) // if default grant to all players
@@ -139,11 +153,13 @@ public class AdminCommands {
         Text format = (Text) parameters.get("Format");
         String type = (String)parameters.get("Type");
         String description = (String)parameters.get("Description");
-
+        AdvancementEntry advancementEntry = (AdvancementEntry) parameters.get("Advancement");
+        Identifier advancement = null;
+        if (advancementEntry != null) advancement = advancementEntry.id();
 
         try {
             TitleDAO titles = getDataAccess().getTitleDAO();
-            Title newTitle = new Title(name, format, description, Title.Type.valueOf(type));
+            Title newTitle = new Title(name, format, description, Title.Type.valueOf(type), advancement);
             titles.update(newTitle);
 
             if(newTitle.type() == Title.Type.DEFAULT) // if default grant to all players

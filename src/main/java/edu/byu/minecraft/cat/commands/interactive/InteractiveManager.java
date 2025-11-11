@@ -7,6 +7,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.context.ParsedCommandNode;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import edu.byu.minecraft.cat.commands.interactive.parameters.InteractiveParameter;
 import net.minecraft.command.CommandRegistryAccess;
@@ -176,7 +177,7 @@ public class InteractiveManager {
     private void displayInteractive(ServerCommandSource source, int sessionId){
         CommandBuilder builder = new CommandBuilder(sessionId);
         for(var line : lines){
-            source.sendFeedback(()-> line.getText(activeSessions.get(sessionId).parameters, builder), false);
+            source.sendFeedback(()-> line.getText(activeSessions.get(sessionId).parameters, builder, parameterInfoMap), false);
         }
     }
 
@@ -219,7 +220,7 @@ public class InteractiveManager {
         return true;
     }
 
-    private Integer setParameter (CommandContext<ServerCommandSource> ctx){
+    private Integer setParameter (CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
         Integer id = ctx.getArgument("sessionId", Integer.class);
         if(!checkSession(ctx, id)){
             return 0;
