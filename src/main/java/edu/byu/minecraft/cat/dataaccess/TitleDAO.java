@@ -10,4 +10,6 @@ import java.util.List;
  */
 public interface TitleDAO extends SimpleDAO<Title, String> {
     Collection<Title> getAllTitlesByAdvancement(String advancement) throws DataAccessException;
+    Collection<Title> getAllDefault() throws DataAccessException;
+    Collection<Title> getAllWorld() throws DataAccessException;
 }

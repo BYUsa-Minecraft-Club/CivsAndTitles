@@ -55,13 +55,14 @@ public abstract class InteractiveParameter<T> {
      * @param ctx command context setting parameter
      * @return if parameter was valid
      */
-    public T loadFromCommandContext(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
+    public InteractiveResult<T> loadFromCommandContext(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
+
         T val = getFromCommandContext(ctx);
         if(validator != null && !validator.test(val))
         {
-            return null;
+            return InteractiveResult.error("Invalid value", val);
         }
-        return val;
+        return InteractiveResult.success(val);
     }
 
     protected abstract T getFromCommandContext(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException;

@@ -22,6 +22,16 @@ public class NonePlayerDAO implements PlayerDAO {
     }
 
     @Override
+    public void removeAllTitles(String title) throws DataAccessException {
+        for (UUID key : players.keySet()) {
+            Player player = players.get(key);
+            if (title.equals(player.title())) {
+                players.put(key, player.setTitle(null));
+            }
+        }
+    }
+
+    @Override
     public Player get(UUID uuid) throws DataAccessException {
         return players.get(uuid);
     }

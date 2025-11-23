@@ -68,6 +68,11 @@ public class SqliteUnlockedTitleDAO extends SqliteDAO<UnlockedTitle> implements 
 
     }
 
+    @Override
+    public UnlockedTitle get(UUID uuid, String title) throws DataAccessException {
+        return executeQuery("SELECT * FROM player_title WHERE player_uuid = ? AND title = ?", this::parseSingle, uuid, title);
+    }
+
     /**
      * @param rs result set to retrieve row data from
      * @return

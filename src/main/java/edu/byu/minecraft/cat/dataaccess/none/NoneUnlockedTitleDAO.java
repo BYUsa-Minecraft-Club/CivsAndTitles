@@ -37,4 +37,13 @@ public class NoneUnlockedTitleDAO implements UnlockedTitleDAO {
     public void deleteAll(String title) throws DataAccessException {
         titles.values().forEach(map -> map.remove(title));
     }
+
+    @Override
+    public UnlockedTitle get(UUID uuid, String title) throws DataAccessException {
+        if (titles.containsKey(uuid)) {
+            return titles.get(uuid).get(title);
+        } else {
+            return null;
+        }
+    }
 }

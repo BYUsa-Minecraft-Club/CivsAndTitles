@@ -1,124 +1,118 @@
 package edu.byu.minecraft.cat.commands;
 
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.Suggestion;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import edu.byu.minecraft.cat.CivsAndTitles;
 import edu.byu.minecraft.cat.dataaccess.DataAccessException;
 import edu.byu.minecraft.cat.dataaccess.TitleDAO;
 import edu.byu.minecraft.cat.model.*;
+import edu.byu.minecraft.cat.util.TitleUtilities;
 import net.minecraft.command.CommandSource;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class SuggestionProviders {
+    private static CompletableFuture<Suggestions> asyncSuggest(SuggestionsBuilder builder, Supplier<Collection<String>> query) {
+        return CompletableFuture.supplyAsync(() -> {
+            for (String s : query.get()) {
+                builder.suggest(s);
+            }
+            return builder.build();
+        });
+    }
     public static CompletableFuture<Suggestions> allPlayers(CommandContext<ServerCommandSource> ignoredCtx, SuggestionsBuilder builder) {
-        try {
-            Stream<String> playerNames = CivsAndTitles.getDataAccess().getPlayerDAO().getAll().stream().map(Player::name);
-            return suggest(filter(playerNames, builder), builder, String.class);
-        } catch (DataAccessException e) {
-            throw new RuntimeException(e);
-        }
+        return asyncSuggest(builder, () -> {
+            try {
+                return CivsAndTitles.getDataAccess().getPlayerDAO().getAll().stream().map(Player::name).toList();
+            } catch (DataAccessException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
-    public static CompletableFuture<Suggestions> onlinePlayers(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
-        Stream<String> playerNames = ctx.getSource().getServer().getPlayerManager().getPlayerList().stream()
-                .map(p -> p.getName().getString());
-        return suggest(filter(playerNames, builder), builder, String.class);
-    }
-
-    public static CompletableFuture<Suggestions> titleType(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
-            Stream<String> titleTypes = Arrays.stream(Title.Type.values()).map(Title.Type::name);
-            return suggest(filter(titleTypes, builder), builder, String.class);
+    public static CompletableFuture<Suggestions> titleType(CommandContext<ServerCommandSource> ignoredCtx, SuggestionsBuilder builder) {
+        Arrays.stream(Title.Type.values()).map(Title.Type::name).forEach(builder::suggest);
+        return builder.buildFuture();
     }
 
 
     public static CompletableFuture<Suggestions> myTitles(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
         ServerPlayerEntity player = ctx.getSource().getPlayer();
-        try {
-            Stream<String> titles = CivsAndTitles.getDataAccess().getUnlockedTitleDAO().getAll(player.getUuid())
-                    .stream().map(UnlockedTitle::title);
-            return suggest(filter(titles, builder), builder, String.class);
-        } catch (DataAccessException e) {
-            throw new RuntimeException(e);
-        }
+        return asyncSuggest(builder, () -> {
+            try {
+                return TitleUtilities.getAllUsableTitles(player.getUuid());
+            } catch (DataAccessException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
-    public static CompletableFuture<Suggestions> allTitles(CommandContext<ServerCommandSource> ignoredCtx, SuggestionsBuilder builder) {
-        try {
-            Stream<String> titles = CivsAndTitles.getDataAccess().getTitleDAO().getAll().stream().map(Title::title);
-            return suggest(filter(titles, builder), builder, String.class);
-        } catch (DataAccessException e) {
-            throw new RuntimeException(e);
-        }
+    public static CompletableFuture<Suggestions> allTitles(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
+        return asyncSuggest(builder, () -> {
+            try {
+                Stream<String> titles = CivsAndTitles.getDataAccess().getTitleDAO().getAll().stream().map(Title::title);
+                return titles.toList();
+            } catch (DataAccessException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     public static CompletableFuture<Suggestions> playersTitles(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
         String playerName = ctx.getArgument("playerName", String.class);
-        try {
-            UUID uuid = CivsAndTitles.getDataAccess().getPlayerDAO().getPlayerUUID(playerName);
-            Stream<String> titles = CivsAndTitles.getDataAccess().getUnlockedTitleDAO().getAll(uuid).stream().map(UnlockedTitle::title);
-            return suggest(filter(titles, builder), builder, String.class);
-        } catch (DataAccessException e) {
-            throw new RuntimeException(e);
-        }
+        return asyncSuggest(builder, () -> {
+            try {
+                UUID uuid = CivsAndTitles.getDataAccess().getPlayerDAO().getPlayerUUID(playerName);
+                Stream<String> titles = CivsAndTitles.getDataAccess().getUnlockedTitleDAO().getAll(uuid).stream().map(UnlockedTitle::title);
+                return titles.toList();
+            } catch (DataAccessException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     public static CompletableFuture<Suggestions> playerUnawardedTitles(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
         String playerName = ctx.getArgument("playerName", String.class);
-        try {
-            UUID uuid = CivsAndTitles.getDataAccess().getPlayerDAO().getPlayerUUID(playerName);
-            Set<String> owned = CivsAndTitles.getDataAccess().getUnlockedTitleDAO().getAll(uuid).stream()
-                    .map(UnlockedTitle::title).collect(Collectors.toSet());
-            Stream<String> unowned = CivsAndTitles.getDataAccess().getTitleDAO().getAll().stream()
-                    .map(Title::title).filter(i -> !owned.contains(i));
-            return suggest(filter(unowned, builder), builder, String.class);
-        } catch (DataAccessException e) {
-            return builder.buildFuture();
-        }
+        return asyncSuggest(builder, () -> {
+            try {
+                UUID uuid = CivsAndTitles.getDataAccess().getPlayerDAO().getPlayerUUID(playerName);
+                TitleDAO titleDAO = CivsAndTitles.getDataAccess().getTitleDAO();
+                Set<String> owned = CivsAndTitles.getDataAccess().getUnlockedTitleDAO().getAll(uuid).stream()
+                        .map(UnlockedTitle::title).collect(Collectors.toSet());
+                Stream<String> unowned = CivsAndTitles.getDataAccess().getTitleDAO().getAll().stream()
+                        .map(Title::title).filter(i -> {
+                            try {
+                                return !owned.contains(i) && titleDAO.get(i).type() != Title.Type.DEFAULT;
+                            } catch (DataAccessException e) {
+                                return !owned.contains(i);
+                            }
+                        });
+                return unowned.toList();
+            } catch (DataAccessException e) {
+                return List.of();
+            }
+        });
     }
 
     public static CompletableFuture<Suggestions> playersRemovableTitles(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
         String playerName = ctx.getArgument("playerName", String.class);
-        try {
-            UUID uuid = CivsAndTitles.getDataAccess().getPlayerDAO().getPlayerUUID(playerName);
-            TitleDAO titleDAO = CivsAndTitles.getDataAccess().getTitleDAO();
-            Stream<String> titles = CivsAndTitles.getDataAccess().getUnlockedTitleDAO().getAll(uuid).stream().filter(x -> {
-                try {
-                    return titleDAO.get(x.title()).type() != Title.Type.DEFAULT;
-                } catch (DataAccessException e) {
-                    return false;
-                }
-            }).map(UnlockedTitle::title);
-            return suggest(filter(titles, builder), builder, String.class);
-        } catch (DataAccessException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static <T> Stream<T> filter(Stream<T> stream, SuggestionsBuilder builder) {
-        return stream.filter(s -> CommandSource.shouldSuggest(builder.getRemaining().toLowerCase(), s.toString().toLowerCase()));
-    }
-
-    private static <T> CompletableFuture<Suggestions> suggest(Stream<T> stream, SuggestionsBuilder builder, Class<T> type) {
-        if(type == Integer.class) {
-            stream.forEach(i -> builder.suggest((int) i));
-        }
-        else if(type == String.class) {
-            stream.forEach(s -> builder.suggest((String) s));
-        }
-        else {
-            return suggest(stream.map(Object::toString), builder, String.class);
-        }
-        return builder.buildFuture();
+        return asyncSuggest(builder, () -> {
+            try {
+                UUID uuid = CivsAndTitles.getDataAccess().getPlayerDAO().getPlayerUUID(playerName);
+                Stream<String> titles = CivsAndTitles.getDataAccess().getUnlockedTitleDAO().getAll(uuid).stream().map(UnlockedTitle::title);
+                return titles.toList();
+            } catch (DataAccessException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 }

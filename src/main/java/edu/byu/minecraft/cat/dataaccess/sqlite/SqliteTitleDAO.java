@@ -102,4 +102,14 @@ public class SqliteTitleDAO extends SqliteDAO<Title> implements TitleDAO {
     public Collection<Title> getAllTitlesByAdvancement(String advancement) throws DataAccessException {
         return executeQuery("SELECT * FROM title WHERE advancement = ?", this::parseCollection, advancement);
     }
+
+    @Override
+    public Collection<Title> getAllDefault() throws DataAccessException {
+        return executeQuery("SELECT * FROM title WHERE type = ?", this::parseCollection, Title.Type.DEFAULT.name());
+    }
+
+    @Override
+    public Collection<Title> getAllWorld() throws DataAccessException {
+        return executeQuery("SELECT * FROM title WHERE type = ?", this::parseCollection, Title.Type.WORLD.name());
+    }
 }

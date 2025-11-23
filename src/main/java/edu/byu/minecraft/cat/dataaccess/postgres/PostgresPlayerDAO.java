@@ -97,4 +97,9 @@ public class PostgresPlayerDAO extends PostgresDAO<Player> implements PlayerDAO 
                 rs.getString("current_title")
         );
     }
+
+    @Override
+    public void removeAllTitles(String title) throws DataAccessException {
+        database.executeUpdate("UPDATE player SET current_title = null WHERE current_title = ?", title);
+    }
 }

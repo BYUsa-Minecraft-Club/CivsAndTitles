@@ -10,6 +10,7 @@ import com.mojang.brigadier.context.ParsedCommandNode;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import edu.byu.minecraft.cat.commands.interactive.parameters.InteractiveParameter;
+import edu.byu.minecraft.cat.commands.interactive.parameters.InteractiveResult;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -70,7 +71,7 @@ public class InteractiveManager {
     private final List<String> basePath;
 
     private final Map<Integer, SessionInfo> activeSessions;
-    private List<InteractiveLine<?>> lines;
+    private final List<InteractiveLine<?>> lines;
 
     private InteractiveParameter<?> startArg;
 
@@ -123,6 +124,9 @@ public class InteractiveManager {
                 if (suggester != null) {
                     arg2.suggests(suggester);
                 }
+                if (parameter.isOptional()) {
+                    tail.executes(this::clearParameter);
+                }
                 arg2.executes(this::setParameter);
                 tail.then(arg2);
                 top.then(tail);
@@ -169,6 +173,20 @@ public class InteractiveManager {
         }
         base.requires(ServerCommandSource::isExecutedByPlayer);
 
+        if(startArg != null)
+        {
+            RequiredArgumentBuilder<ServerCommandSource, ?> arg2 = argument(startArg.getName(), startArg.getCommandArgumentType(registryAccess));
+            SuggestionProvider<ServerCommandSource> suggester = startArg.getSuggestionProvider();
+            if (suggester != null) {
+                arg2.suggests(suggester);
+            }
+            arg2.executes(this::startInteractive);
+            base.then(arg2);
+        }
+        else {
+            base.executes(this::startInteractive);
+        }
+
         dispatcher.register(base);
     }
 
@@ -195,7 +213,7 @@ public class InteractiveManager {
             defaults.put(info.getName(), info.getDefaultVal(ctx));
         }
         if (startArg != null) {
-            defaults.put(startArg.getName(), startArg.loadFromCommandContext(ctx));
+            defaults.put(startArg.getName(), startArg.loadFromCommandContext(ctx).getOrPartial());
         }
 
         activeSessions.put(currentId, new InteractiveManager.SessionInfo(player, defaults));
@@ -229,15 +247,29 @@ public class InteractiveManager {
             return 0;
         }
         List<ParsedCommandNode<ServerCommandSource>> nodes = ctx.getNodes();
-        String paramName =  nodes.get(nodes.size()-2).getNode().getName();
+        String paramName = nodes.get(nodes.size()-2).getNode().getName();
         //read value and set value
-        Object paramVal = parameterInfoMap.get(paramName).loadFromCommandContext(ctx);
-        if (paramVal == null)
+        InteractiveResult<?> paramVal = parameterInfoMap.get(paramName).loadFromCommandContext(ctx);
+        if (paramVal.isError())
         {
-            ctx.getSource().sendFeedback(()-> Text.literal("Invalid value for " + paramName + ": " + paramVal), false);
+            ctx.getSource().sendFeedback(()-> Text.literal("Invalid value for " + paramName + ": " + paramVal.getOrPartial()), false);
             return 0;
         }
-        activeSessions.get(id).parameters.put(paramName, paramVal);
+        activeSessions.get(id).parameters.put(paramName, paramVal.getOrThrow());
+
+        displayInteractive(ctx.getSource(), id);
+        return 1;
+    }
+
+    private Integer clearParameter (CommandContext<ServerCommandSource> ctx) {
+        Integer id = ctx.getArgument("sessionId", Integer.class);
+        if(!checkSession(ctx, id)){
+            return 0;
+        }
+        List<ParsedCommandNode<ServerCommandSource>> nodes = ctx.getNodes();
+        String paramName = nodes.getLast().getNode().getName();
+
+        activeSessions.get(id).parameters.put(paramName, null);
 
         displayInteractive(ctx.getSource(), id);
         return 1;

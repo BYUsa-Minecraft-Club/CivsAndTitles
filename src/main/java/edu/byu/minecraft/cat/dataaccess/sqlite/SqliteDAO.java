@@ -3,6 +3,7 @@ package edu.byu.minecraft.cat.dataaccess.sqlite;
 import edu.byu.minecraft.cat.CivsAndTitles;
 import edu.byu.minecraft.cat.dataaccess.DataAccessException;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.InvalidHierarchicalFileException;
 
 import java.io.File;
 import java.io.InputStream;
@@ -13,12 +14,11 @@ import java.util.stream.Collectors;
 public abstract class SqliteDAO<S> {
     private static final String SEPARATOR = " ";
 
-    private static final File FOLDER = new File(String.format("config/%s", CivsAndTitles.MOD_ID));
-
-    private static final String FILE_LOCATION = FOLDER.getPath() + "/database.db";
+    private static final String DATABASE_FILE = "database.db";
 
     private static boolean databaseCreated = false;
 
+    private final File DATABASE_PATH;
 
     /**
      * Constructs a new sqlite DAO. If the database file doesn't already exist it is created
@@ -26,6 +26,7 @@ public abstract class SqliteDAO<S> {
      * @throws DataAccessException if the database file could not be created
      */
     protected SqliteDAO() throws DataAccessException {
+        DATABASE_PATH = CivsAndTitles.getPath(DATABASE_FILE);
         configureDatabase();
     }
 
@@ -86,7 +87,7 @@ public abstract class SqliteDAO<S> {
      */
     private <T> T execute(SQLFunction<T> function) throws DataAccessException {
         synchronized (SqliteDAO.class) {
-            try (Connection conn = DriverManager.getConnection("jdbc:sqlite:" + FILE_LOCATION)) {
+            try (Connection conn = DriverManager.getConnection("jdbc:sqlite:" + DATABASE_PATH)) {
                 return function.apply(conn);
             } catch (SQLException e) {
                 throw new DataAccessException(e);
@@ -154,11 +155,8 @@ public abstract class SqliteDAO<S> {
     protected void configureDatabase() throws DataAccessException {
         if (!databaseCreated) {
             try {
-                if (!FOLDER.exists() && !FOLDER.mkdirs()) {
-                    throw new DataAccessException("Couldn't create folder: " + FOLDER.getAbsolutePath());
-                }
-                if (!new File(FILE_LOCATION).exists()) {
-                    try (InputStream is = getClass().getClassLoader().getResourceAsStream("create_sqlite_tables.sql")) {
+                if (!DATABASE_PATH.exists()) {
+                    try (InputStream is = getClass().getClassLoader().getResourceAsStream("create_tables.sql")) {
                         if(is == null) {
                             throw new DataAccessException("Could not find required database creation resource file");
                         }

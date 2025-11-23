@@ -6,6 +6,7 @@ import edu.byu.minecraft.cat.model.Title;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 
 public class NoneTitleDAO implements TitleDAO {
     HashMap<String, Title> titles = new HashMap<>();
@@ -13,6 +14,16 @@ public class NoneTitleDAO implements TitleDAO {
     @Override
     public Collection<Title> getAllTitlesByAdvancement(String advancement) throws DataAccessException {
         return titles.values().stream().filter(title -> title.advancement().isPresent() && title.advancement().get().toString().equals(advancement)).toList();
+    }
+
+    @Override
+    public Collection<Title> getAllDefault() throws DataAccessException {
+        return titles.values().stream().filter(title -> title.type().equals(Title.Type.DEFAULT)).toList();
+    }
+
+    @Override
+    public Collection<Title> getAllWorld() throws DataAccessException {
+        return titles.values().stream().filter(title -> title.type().equals(Title.Type.WORLD)).toList();
     }
 
     @Override

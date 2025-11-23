@@ -3,11 +3,11 @@ package edu.byu.minecraft.cat.commands;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
-import edu.byu.minecraft.cat.CivsAndTitles;
 import edu.byu.minecraft.cat.commands.interactive.*;
 import edu.byu.minecraft.cat.commands.interactive.parameters.*;
 import edu.byu.minecraft.cat.dataaccess.*;
 import edu.byu.minecraft.cat.model.*;
+import edu.byu.minecraft.cat.util.TitleUtilities;
 import net.minecraft.advancement.AdvancementEntry;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.command.CommandManager;
@@ -15,12 +15,12 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
-import java.time.LocalDate;
 import java.util.*;
 
 import static edu.byu.minecraft.cat.CivsAndTitles.getDataAccess;
 import static net.minecraft.server.command.CommandManager.argument;
 import static net.minecraft.server.command.CommandManager.literal;
+import static edu.byu.minecraft.cat.util.CommandUtilities.perform;
 
 public class AdminCommands {
     public static void registerCommands(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registryAccess, CommandManager.RegistrationEnvironment environment) {
@@ -30,14 +30,13 @@ public class AdminCommands {
                 .then(literal("revokeTitle").then(argument("playerName", StringArgumentType.string()).suggests(SuggestionProviders::allPlayers).then(argument("title", StringArgumentType.string()).suggests(SuggestionProviders::playersRemovableTitles).executes(AdminCommands::revokeTitle))))
                 .then(literal("deleteTitle").then(argument("title", StringArgumentType.string()).suggests(SuggestionProviders::allTitles).executes(AdminCommands::removeTitle)))
                 .then(literal("clearWorldTitles").executes(AdminCommands::clearWorldTitles))
-                .then(literal("breakpoint").executes(AdminCommands::debugCommand))
         ));
 
         new InteractiveManager(Arrays.asList("titles", "admin", "create"))
                 .addLine(new InteractiveTextLine(Text.literal("Title Creation")))
                 .addLine(new InteractiveParameterLine<>(new InteractiveStringParameter("Name").setValidator((x)-> {
                     try {
-                        return getDataAccess().getTitleDAO().get((String)x) == null;
+                        return getDataAccess().getTitleDAO().get(x) == null;
                     } catch (DataAccessException e) {
                         throw new RuntimeException(e); // TODO what is the best think to handle in this error case
                     }
@@ -116,11 +115,6 @@ public class AdminCommands {
 
     }
 
-    private static Integer debugCommand(CommandContext<ServerCommandSource> ctx) {
-        DataAccess dataAccess = getDataAccess();
-        return 1;
-    }
-
     private static Integer finishTitleCreation(CommandContext<ServerCommandSource> ctx, Map<String, Object> parameters){
         String name = (String)parameters.get("Name");
         Text format = (Text) parameters.get("Format");
@@ -129,27 +123,13 @@ public class AdminCommands {
         AdvancementEntry advancementEntry = (AdvancementEntry) parameters.get("Advancement");
         Optional<Identifier> advancement = advancementEntry == null ? Optional.empty() : Optional.of(advancementEntry.id());
 
-        try {
-            TitleDAO titles = getDataAccess().getTitleDAO();
-            Title newTitle = new Title(name, format, description, Title.Type.valueOf(type), advancement);
-            titles.insert(newTitle);
+        Title newTitle = new Title(name, format, description, Title.Type.valueOf(type), advancement);
 
-            if(newTitle.type() == Title.Type.DEFAULT) // if default grant to all players
-            {
-                Collection<Player> players = getDataAccess().getPlayerDAO().getAll();
-                UnlockedTitleDAO unlockedTitleDAO = getDataAccess().getUnlockedTitleDAO();;
-                for (Player x: players){
-                    unlockedTitleDAO.insert(new UnlockedTitle(x.uuid(), name, LocalDate.now().toString()));
-                }
-            }
-            ctx.getSource().sendFeedback(()->Text.literal("Created Title: " + name), false);
-        } catch (DataAccessException e) {
-            CivsAndTitles.LOGGER.error(e.toString());
-            ctx.getSource().sendFeedback(()->Text.literal("Unable to access the database. Try again later."), false);
-            return 0;
-        }
+        ctx.getSource().sendFeedback(() -> Text.of("Creating new title " + name + "..."), false);
 
-        return 1;
+        return perform(ctx, TitleUtilities.addTitle(newTitle),
+                () -> Text.of("Created new Title " + name),
+                () -> Text.of("Title " + name + " already exists"));
     }
 
     private static Integer finishTitleEdit(CommandContext<ServerCommandSource> ctx, Map<String, Object> parameters){
@@ -160,28 +140,13 @@ public class AdminCommands {
         AdvancementEntry advancementEntry = (AdvancementEntry) parameters.get("Advancement");
         Optional<Identifier> advancement = advancementEntry == null ? Optional.empty() : Optional.of(advancementEntry.id());
 
-        try {
-            TitleDAO titles = getDataAccess().getTitleDAO();
-            Title newTitle = new Title(name, format, description, Title.Type.valueOf(type), advancement);
-            titles.update(newTitle);
+        Title newTitle = new Title(name, format, description, Title.Type.valueOf(type), advancement);
 
-            if(newTitle.type() == Title.Type.DEFAULT) // if default grant to all players
-            {
-                Collection<Player> players = getDataAccess().getPlayerDAO().getAll();
-                UnlockedTitleDAO unlockedTitleDAO = getDataAccess().getUnlockedTitleDAO();
-                List<UUID> alreadyUnlocked = unlockedTitleDAO.getAll(name).stream().map(UnlockedTitle::uuid).toList();
-                for (Player x: players.stream().filter((x) -> !alreadyUnlocked.contains(x.uuid())).toList()){
-                    unlockedTitleDAO.insert(new UnlockedTitle(x.uuid(), name, LocalDate.now().toString()));
-                }
-            }
-            ctx.getSource().sendFeedback(()->Text.literal("Submitted Edit for Title: " + name), false);
-        } catch (DataAccessException e) {
-            CivsAndTitles.LOGGER.error(e.toString());
-            ctx.getSource().sendFeedback(()->Text.literal("Unable to access the database. Try again later."), false);
-            return 0;
-        }
+        ctx.getSource().sendFeedback(() -> Text.of("Editing title " + name + "..."), false);
 
-        return 1;
+        return perform(ctx, TitleUtilities.editTitle(newTitle),
+                () -> Text.of("Successfully modified Title " + name),
+                () -> Text.of("Title " + name + " does not exist"));
     }
 
     /***
@@ -193,67 +158,13 @@ public class AdminCommands {
     public static Integer bestowTitle(CommandContext<ServerCommandSource> ctx) {
         String player = ctx.getArgument("playerName", String.class);
         String title = ctx.getArgument("title", String.class);
-        try {
-            Title titleObj = getDataAccess().getTitleDAO().get(title);
-            if(titleObj == null)
-            {
-                ctx.getSource().sendFeedback(()->Text.literal("Unknown Title " + title), false);
-                return 0;
-            }
-            UUID playerId = getDataAccess().getPlayerDAO().getPlayerUUID(player);
-            UnlockedTitleDAO unlockedTitleDAO = getDataAccess().getUnlockedTitleDAO();
 
-            UnlockedTitle unlockedTitle = new UnlockedTitle(playerId, title, LocalDate.now().toString());
-            unlockedTitleDAO.insert(unlockedTitle);
-        } catch (DataAccessException e) {
-            CivsAndTitles.LOGGER.error(e.toString());
-            ctx.getSource().sendFeedback(()->Text.literal("Unable to access the database. Try again later."), false);
-        }
-        ctx.getSource().sendFeedback(()-> Text.literal("Giving " + player + " title "+ title), false);
-        return 1;
+        ctx.getSource().sendFeedback(() -> Text.of("Awarding title " + title + " to " + player + "..."), false);
+
+        return perform(ctx, TitleUtilities.awardTitle(player, title),
+                () -> Text.of("Awarded title " + title + " to " + player),
+                () -> Text.of(player + " already has title " + title));
     }
-
-    /***
-     * Adds a title into the system.
-     * @param ctx
-     * @return
-     */
-//    public static Integer addTitle(CommandContext<ServerCommandSource> ctx) {
-//        ctx.getSource().sendFeedback(()-> Text.literal("Adding Title"), false);
-//        String titleName = ctx.getArgument("TitleName", String.class);
-//        String titleDescription = ctx.getArgument("Description", String.class);
-//        String titleType = ctx.getArgument("Type", String.class);
-//
-//
-//        TitleDAO titleDAO;
-//        try {
-//            titleDAO = getDataAccess().getTitleDAO();
-//            if(titleDAO.get(titleName) != null){
-//                ctx.getSource().sendFeedback(()->Text.literal("Title with name "+ titleName + "already exists"), false);
-//                return 0;
-//            }
-//            Title.Type type = Title.Type.valueOf(titleType);
-//            titleDAO.update(new Title(titleName, "Blue", titleDescription, type));
-//            if(type == Title.Type.DEFAULT) // if default grant to all players
-//            {
-//                Collection<Player> players = getDataAccess().getPlayerDAO().getAll();
-//                UnlockedTitleDAO unlockedTitleDAO = getDataAccess().getUnlockedTitleDAO();;
-//                for (Player x: players){
-//                    unlockedTitleDAO.insert(new UnlockedTitle(x.uuid(), titleName, LocalDate.now().toString()));
-//                }
-//            }
-//        } catch (DataAccessException ex){
-//            ctx.getSource().sendFeedback(()->Text.literal("Unable to access the database. Try again later."), false);
-//            return 0;
-//        } catch (IllegalArgumentException ex){
-//            ctx.getSource().sendFeedback(()->Text.literal("Title type " + titleType + " is not a vaild type"), false);
-//            return 0;
-//        }
-//
-//
-//
-//        return 1;
-//    }
 
     /***
      * Removes a title from a player.
@@ -263,34 +174,12 @@ public class AdminCommands {
     public static Integer revokeTitle(CommandContext<ServerCommandSource> ctx) {
         String player = ctx.getArgument("playerName", String.class);
         String title = ctx.getArgument("title", String.class);
-        try {
-            Title titleObj = getDataAccess().getTitleDAO().get(title);
-            if(titleObj == null)
-            {
-                ctx.getSource().sendFeedback(()->Text.literal("Unknown Title " + title), false);
-                return 0;
-            }
-            if(titleObj.type() == Title.Type.DEFAULT)
-            {
-                ctx.getSource().sendFeedback(()->Text.literal("Can't revoke default title: "+ title), false);
-                return 0;
-            }
-            PlayerDAO playerDAO = getDataAccess().getPlayerDAO();
-            UUID playerId = playerDAO.getPlayerUUID(player);
-            Player playerObj = playerDAO.get(playerId);
-            UnlockedTitleDAO unlockedTitleDAO = getDataAccess().getUnlockedTitleDAO();
-            unlockedTitleDAO.delete(playerId, title);
-            if(playerObj.title().equals(title)) // if the title is equiped remove it
-            {
-                playerObj = playerObj.setTitle(null);
-                playerDAO.update(playerObj);
-            }
-        } catch (DataAccessException e) {
-            CivsAndTitles.LOGGER.error(e.toString());
-            ctx.getSource().sendFeedback(()->Text.literal("Unable to access the database. Try again later."), false);
-        }
-        ctx.getSource().sendFeedback(()-> Text.literal("removing " + player + " title "+ title), false);
-        return 1;
+
+        ctx.getSource().sendFeedback(() -> Text.of("Revoking title " + title + "from " + player + "..."), false);
+
+        return perform(ctx, TitleUtilities.revokeTitle(player, title),
+                () -> Text.of("Removed title " + title + " from " + player),
+                () -> Text.of(player + " does not have title " + title));
     }
 
     /***
@@ -300,54 +189,18 @@ public class AdminCommands {
      */
     public static Integer removeTitle(CommandContext<ServerCommandSource> ctx) {
         String title = ctx.getArgument("title", String.class);
-        try {
-            TitleDAO titleDAO = getDataAccess().getTitleDAO();
-            Title titleObj = titleDAO.get(title);
-            if(titleObj == null)
-            {
-                ctx.getSource().sendFeedback(()->Text.literal("Unknown Title " + title), false);
-                return 0;
-            }
-            titleDAO.delete(title);
 
-        } catch (DataAccessException e) {
-            CivsAndTitles.LOGGER.error(e.toString());
-            ctx.getSource().sendFeedback(()->Text.literal("Unable to access the database. Try again later."), false);
-        }
-        ctx.getSource().sendFeedback(()-> Text.literal("removing title "+ title), false);
-        return 1;
+        ctx.getSource().sendFeedback(() -> Text.of("Deleting title " + title + "..."), false);
+
+        return perform(ctx, TitleUtilities.deleteTitle(title),
+                () -> Text.of("Deleted title " + title),
+                () -> Text.of("Title " + title + " does not exist"));
     }
+
     public static Integer clearWorldTitles(CommandContext<ServerCommandSource> ctx) {
-        try {
-            Collection<Title> titles = getDataAccess().getTitleDAO().getAll();
-            UnlockedTitleDAO unlockedTitleDAO = getDataAccess().getUnlockedTitleDAO();
-            PlayerDAO playerDAO = getDataAccess().getPlayerDAO();
-            Collection<Player> players = playerDAO.getAll();
-            titles.stream().filter((x) -> x.type() == Title.Type.WORLD).forEach((x) -> {
-                try {
-                    unlockedTitleDAO.deleteAll(x.title());
-                    players.stream().filter((p) -> p.title().equals(x.title())).forEach(
-                            (p) -> {
-                                Player updatedPlayer = p.setTitle(null);
-                                try {
-                                    playerDAO.update(updatedPlayer);
-                                } catch (DataAccessException e) {
-                                    throw new RuntimeException(e);
-                                }
-                            }
-                    );
-
-                } catch (DataAccessException e) {
-                    CivsAndTitles.LOGGER.warn(e.toString());
-                }
-            });
-
-
-        } catch (DataAccessException e) {
-            CivsAndTitles.LOGGER.error(e.toString());
-            ctx.getSource().sendFeedback(()->Text.literal("Unable to access the database. Try again later."), false);
-        }
-        ctx.getSource().sendFeedback(()-> Text.literal("removing world titles from all players" ), false);
-        return 1;
+        ctx.getSource().sendFeedback(() -> Text.of("Clearing world titles..."), false);
+        return perform(ctx, TitleUtilities.clearWorldTitles(),
+                () -> Text.of("Cleared all world titles"),
+                () -> Text.of("This error message will never appear"));
     }
 }

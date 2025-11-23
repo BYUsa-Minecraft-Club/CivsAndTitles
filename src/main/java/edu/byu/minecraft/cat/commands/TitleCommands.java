@@ -7,16 +7,13 @@ import com.mojang.brigadier.context.CommandContext;
 import edu.byu.minecraft.cat.CivsAndTitles;
 import edu.byu.minecraft.cat.commands.interactive.InteractiveDisplay;
 import edu.byu.minecraft.cat.dataaccess.DataAccessException;
-import edu.byu.minecraft.cat.dataaccess.PlayerDAO;
 import edu.byu.minecraft.cat.dataaccess.TitleDAO;
 import edu.byu.minecraft.cat.dataaccess.UnlockedTitleDAO;
 import edu.byu.minecraft.cat.model.Player;
 import edu.byu.minecraft.cat.model.Title;
 import edu.byu.minecraft.cat.model.UnlockedTitle;
-import eu.pb4.placeholders.api.ParserContext;
-import eu.pb4.placeholders.api.parsers.TagParser;
+import edu.byu.minecraft.cat.util.TitleUtilities;
 import net.minecraft.command.CommandRegistryAccess;
-import net.minecraft.entity.Entity;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -33,6 +30,7 @@ import java.util.List;
 
 import static net.minecraft.server.command.CommandManager.argument;
 import static net.minecraft.server.command.CommandManager.literal;
+import static edu.byu.minecraft.cat.util.CommandUtilities.perform;
 
 public class TitleCommands {
     public static void registerCommands(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registryAccess, CommandManager.RegistrationEnvironment environment) {
@@ -181,59 +179,32 @@ public class TitleCommands {
 
     public static Integer changeTitle(CommandContext<ServerCommandSource> ctx) {
         String title = ctx.getArgument("title", String.class);
-        ctx.getSource().sendFeedback(()->Text.literal("Change title to " + title), false);
 
-        Entity entity = ctx.getSource().getEntity();
-        if (entity == null)
-        {
+        ServerPlayerEntity player = ctx.getSource().getPlayer();
+        if (player == null) {
+            ctx.getSource().sendError(Text.of("Must be a player to have a title"));
             return 0;
         }
 
-        try {
-            PlayerDAO playerDAO = CivsAndTitles.getDataAccess().getPlayerDAO();
-            Player player = playerDAO.get(entity.getUuid());
-            Collection<UnlockedTitle> validTitle = CivsAndTitles.getDataAccess().getUnlockedTitleDAO().getAll(entity.getUuid());
-            if(validTitle.stream().anyMatch(ut->ut.title().equals(title)))
-            {
-                player = player.setTitle(title);
-                playerDAO.update(player);
-            }
-            else
-            {
-                ctx.getSource().sendFeedback(()->Text.literal("Not an unlocked title: " + title), false);
-                return 0;
-            }
+        ctx.getSource().sendFeedback(()->Text.literal("Applying title " + title + "..."), false);
 
-        } catch (DataAccessException e) {
-            throw new RuntimeException(e);
-        }
-        return 1;
+        return perform(ctx, TitleUtilities.applyTitle(player.getUuid(), title),
+                () -> Text.of("Applied title " + title),
+                () -> Text.of("You do not own that title"));
     }
 
     public static Integer clearTitle(CommandContext<ServerCommandSource> ctx) {
-        ctx.getSource().sendFeedback(()->Text.literal("Remove active title"), false);
-        Entity entity = ctx.getSource().getEntity();
-        if (entity == null)
-        {
+
+        ServerPlayerEntity player = ctx.getSource().getPlayer();
+        if (player == null) {
+            ctx.getSource().sendError(Text.of("Must be a player to have a title"));
             return 0;
         }
-        try {
-            PlayerDAO playerDAO = CivsAndTitles.getDataAccess().getPlayerDAO();
-            Player player = playerDAO.get(entity.getUuid());
-            player = player.setTitle(null);
-            playerDAO.update(player);
-        } catch (DataAccessException e) {
-            throw new RuntimeException(e);
-        }
-        return 1;
+
+        ctx.getSource().sendFeedback(()->Text.literal("Clearing current title..."), false);
+
+        return perform(ctx, TitleUtilities.clearTitle(player.getUuid()),
+                () -> Text.of("Removed active title"),
+                () -> Text.of("This error should never display"));
     }
-
-//    public static Integer showRank(CommandContext<ServerCommandSource> ctx) {
-//        Boolean showRank = ctx.getArgument("showRank", Boolean.class);
-//        ctx.getSource().sendFeedback(()->Text.literal("Change show rank to " + showRank), false);
-//        return 1;
-//    }
-
-
-
 }

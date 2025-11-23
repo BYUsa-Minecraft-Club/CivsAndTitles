@@ -86,4 +86,9 @@ public class PostgresUnlockedTitleDAO extends PostgresDAO<UnlockedTitle> impleme
                 rs.getString("date_earned")
         );
     }
+
+    @Override
+    public UnlockedTitle get(UUID uuid, String title) throws DataAccessException {
+        return database.executeQuery("SELECT * FROM player_title WHERE player_uuid = ? AND title = ?", this::parseSingle, uuid, title);
+    }
 }

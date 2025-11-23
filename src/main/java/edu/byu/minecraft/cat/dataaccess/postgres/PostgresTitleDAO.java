@@ -105,4 +105,14 @@ public class PostgresTitleDAO extends PostgresDAO<Title> implements TitleDAO {
     public Collection<Title> getAllTitlesByAdvancement(String advancement) throws DataAccessException {
         return database.executeQuery("SELECT * FROM title WHERE advancement = ?", this::parseCollection, advancement);
     }
+
+    @Override
+    public Collection<Title> getAllDefault() throws DataAccessException {
+        return database.executeQuery("SELECT * FROM title WHERE type = ?", this::parseCollection, Title.Type.DEFAULT.name());
+    }
+
+    @Override
+    public Collection<Title> getAllWorld() throws DataAccessException {
+        return database.executeQuery("SELECT * FROM title WHERE type = ?", this::parseCollection, Title.Type.WORLD.name());
+    }
 }

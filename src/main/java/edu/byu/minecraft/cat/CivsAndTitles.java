@@ -1,16 +1,17 @@
 package edu.byu.minecraft.cat;
 
 import edu.byu.minecraft.cat.commands.*;
+import edu.byu.minecraft.cat.config.Config;
+import edu.byu.minecraft.cat.config.PostgresConfig;
 import edu.byu.minecraft.cat.dataaccess.DataAccess;
 import edu.byu.minecraft.cat.dataaccess.DataAccessException;
-import edu.byu.minecraft.cat.dataaccess.TitleDAO;
-import edu.byu.minecraft.cat.dataaccess.UnlockedTitleDAO;
 import edu.byu.minecraft.cat.dataaccess.none.NoneDataAccess;
 import edu.byu.minecraft.cat.dataaccess.postgres.PostgresDataAccess;
 import edu.byu.minecraft.cat.dataaccess.sqlite.SqliteDataAccess;
 import edu.byu.minecraft.cat.model.Player;
 import edu.byu.minecraft.cat.model.Title;
-import edu.byu.minecraft.cat.model.UnlockedTitle;
+import edu.byu.minecraft.cat.util.AsyncUtilities;
+import edu.byu.minecraft.cat.util.TitleUtilities;
 import net.fabricmc.api.ModInitializer;
 
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -23,20 +24,24 @@ import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.LocalDate;
-import java.util.List;
+import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import eu.pb4.placeholders.api.Placeholders;
 import eu.pb4.placeholders.api.PlaceholderResult;
 
 
 public class CivsAndTitles implements ModInitializer {
 	public static final String MOD_ID = "civsandtitles";
-	// This logger is used to write text to the console and the log file.
-	// It is considered best practice to use your mod id as the logger's name.
-	// That way, it's clear which mod wrote info, warnings, and errors.
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
 	private static DataAccess dataAccess;
+    private static Config config;
+    private static final Path FOLDER = Paths.get(String.format("config/%s/", MOD_ID));
+
+    public static File getPath(String file) {
+        return FOLDER.resolve(file).toFile();
+    }
 
 	public static DataAccess getDataAccess() {
 		return dataAccess;
@@ -46,14 +51,29 @@ public class CivsAndTitles implements ModInitializer {
 		CivsAndTitles.dataAccess = dataAccess;
 	}
 
+    public static boolean advancementsEnabled() { return config.enable_advancement_awards(); }
+
+    public static boolean playerMixinEnabled() { return config.modify_display_name(); }
+
 	@Override
 	public void onInitialize() {
 		// This code runs as soon as Minecraft is in a mod-load-ready state.
 		// However, some things (like resources) may still be uninitialized.
 		// Proceed with mild caution.
 
+        if (!FOLDER.toFile().exists() && !FOLDER.toFile().mkdir()) {
+            CivsAndTitles.LOGGER.error("Couldn't create config folder: {}", FOLDER);
+        }
+
+        config = Config.loadOrCreate();
+        PostgresConfig pgconfig = PostgresConfig.loadOrCreate(); // We want to create this file regardless
+
         try {
-            setDataAccess(new PostgresDataAccess());
+            switch (config.database()) {
+                case Config.DatabaseType.Postgres -> setDataAccess(new PostgresDataAccess(pgconfig));
+                case Config.DatabaseType.SqLite -> setDataAccess(new SqliteDataAccess());
+                case Config.DatabaseType.None -> setDataAccess(new NoneDataAccess());
+            }
         } catch (DataAccessException e) {
             throw new RuntimeException(e);
         }
@@ -61,50 +81,50 @@ public class CivsAndTitles implements ModInitializer {
 		CommandRegistrationCallback.EVENT.register(AdminCommands::registerCommands);
 
 		ServerPlayConnectionEvents.JOIN.register(this::playerJoinCallback);
+        ServerPlayConnectionEvents.DISCONNECT.register(this::playerLeaveCallback);
 		Placeholders.register(
 				Identifier.of("byu", "title"),
 				(ctx, arg) -> {
                     ServerPlayerEntity serverPlayer = ctx.player();
 					if (serverPlayer == null)
 						return PlaceholderResult.invalid("No player!");
-					try {
-						Player dbPlayer = getDataAccess().getPlayerDAO().get(serverPlayer.getUuid());
-						TitleDAO titleDAO = getDataAccess().getTitleDAO();
-
-						Title title = titleDAO.get(dbPlayer.title());
-						if (title == null){
-							return 	PlaceholderResult.value("");
-						}
+					Title title = TitleUtilities.getCache(serverPlayer.getUuid());
+                    if (title == null) {
+                        return PlaceholderResult.value("None ");
+                    } else {
                         return PlaceholderResult.value(title.format().copy().append(" "));
-					} catch (DataAccessException e) {
-						return PlaceholderResult.invalid("Database Error!");
-					}
+                    }
 				}
 		);
 	}
 
-	private void playerJoinCallback(ServerPlayNetworkHandler serverPlayNetworkHandler, PacketSender packetSender,
+    private void playerJoinCallback(ServerPlayNetworkHandler serverPlayNetworkHandler, PacketSender packetSender,
 									MinecraftServer minecraftServer) {
-		try {
-			ServerPlayerEntity serverPlayer = serverPlayNetworkHandler.getPlayer();
-			Player dbPlayer = getDataAccess().getPlayerDAO().get(serverPlayer.getUuid());
-			UnlockedTitleDAO unlockedTitleDAO = getDataAccess().getUnlockedTitleDAO();
-			if (dbPlayer == null) {
-				dbPlayer = new Player(serverPlayer.getUuid(), serverPlayer.getNameForScoreboard(), null);
-				getDataAccess().getPlayerDAO().insert(dbPlayer);
-				List<Title> defaultTitles = getDataAccess().getTitleDAO().getAll().stream().filter(x -> x.type() == Title.Type.DEFAULT).toList();
-				for (Title x: defaultTitles){
-					unlockedTitleDAO.insert(new UnlockedTitle(serverPlayer.getUuid(), x.title(), LocalDate.now().toString()));
-				}
+        ServerPlayerEntity serverPlayer = serverPlayNetworkHandler.getPlayer();
+        AsyncUtilities.performAsync(minecraftServer,
+                () -> {
 
-			}
-			else if (!serverPlayer.getNameForScoreboard().equals(dbPlayer.name())) {
-				dbPlayer = new Player(serverPlayer.getUuid(), serverPlayer.getNameForScoreboard(),
-						dbPlayer.title());
-				getDataAccess().getPlayerDAO().update(dbPlayer);
-			}
-		} catch (DataAccessException e) {
-			LOGGER.error("Data access error on player join", e);
-		}
+                    try {
+                        Player dbPlayer = getDataAccess().getPlayerDAO().get(serverPlayer.getUuid());
+                        if (dbPlayer == null) {
+                            dbPlayer = new Player(serverPlayer.getUuid(), serverPlayer.getGameProfile().name(), null);
+                            getDataAccess().getPlayerDAO().insert(dbPlayer);
+                        } else if (!serverPlayer.getGameProfile().name().equals(dbPlayer.name())) {
+                            dbPlayer = new Player(serverPlayer.getUuid(), serverPlayer.getGameProfile().name(),
+                                    dbPlayer.title());
+                            getDataAccess().getPlayerDAO().update(dbPlayer);
+                        }
+                    } catch (DataAccessException e) {
+                        throw new RuntimeException(e);
+                    }
+                    TitleUtilities.updateCache(serverPlayer.getUuid());
+                },
+                error -> LOGGER.error("Database error while processing player join: ", error),
+                error -> LOGGER.error("Unknown error while processing player join: ", error));
 	}
+
+    private void playerLeaveCallback(ServerPlayNetworkHandler serverPlayNetworkHandler, MinecraftServer minecraftServer) {
+        ServerPlayerEntity player = serverPlayNetworkHandler.getPlayer();
+        TitleUtilities.removeCache(player.getUuid());
+    }
 }

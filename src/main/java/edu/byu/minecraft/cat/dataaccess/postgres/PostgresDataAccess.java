@@ -1,6 +1,7 @@
 package edu.byu.minecraft.cat.dataaccess.postgres;
 
 import edu.byu.minecraft.cat.CivsAndTitles;
+import edu.byu.minecraft.cat.config.PostgresConfig;
 import edu.byu.minecraft.cat.dataaccess.*;
 import edu.byu.minecraft.cat.dataaccess.sqlite.SqliteDataAccess;
 import net.minecraft.util.Identifier;
@@ -10,7 +11,6 @@ import java.sql.*;
 import java.util.UUID;
 
 public class PostgresDataAccess implements DataAccess {
-    PostgresConfig config;
     Connection database;
     SqliteDataAccess fallback = null;
 
@@ -18,8 +18,7 @@ public class PostgresDataAccess implements DataAccess {
     PostgresTitleDAO titleDAO;
     PostgresUnlockedTitleDAO unlockedTitleDAO;
 
-    public PostgresDataAccess() throws DataAccessException {
-        config = PostgresConfig.loadOrCreate();
+    public PostgresDataAccess(PostgresConfig config) throws DataAccessException {
         try {
             database = DriverManager.getConnection(config.toJdbcUrl(), config.username(), config.password());
             configureDatabase();
@@ -59,7 +58,7 @@ public class PostgresDataAccess implements DataAccess {
      */
     protected void configureDatabase() throws DataAccessException {
         // I'm too lazy to check if the tables already exist so I'm just going to run the create commands on every start
-        try (InputStream is = getClass().getClassLoader().getResourceAsStream("create_sqlite_tables.sql")) {
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream("create_tables.sql")) {
             if(is == null) {
                 throw new DataAccessException("Could not find required database creation resource file");
             }

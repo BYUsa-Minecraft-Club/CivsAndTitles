@@ -57,4 +57,13 @@ public interface UnlockedTitleDAO {
      */
     void deleteAll(String title) throws DataAccessException;
 
+    /**
+     * Gets the unlocked title if it exists<br>
+     * Basically only used for checking if a player has a title
+     *
+     * @param uuid  player to check title for
+     * @param title title to match
+     * @throws DataAccessException If database cannot be accessed
+     */
+    UnlockedTitle get(UUID uuid, String title) throws DataAccessException;
 }
