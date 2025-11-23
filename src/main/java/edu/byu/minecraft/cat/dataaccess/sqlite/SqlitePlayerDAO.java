@@ -7,7 +7,6 @@ import edu.byu.minecraft.cat.model.Player;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
-import java.util.List;
 import java.util.UUID;
 
 public class SqlitePlayerDAO extends SqliteDAO<Player> implements PlayerDAO {

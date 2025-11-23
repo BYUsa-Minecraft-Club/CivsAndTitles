@@ -1,7 +1,6 @@
 package edu.byu.minecraft.cat.commands;
 
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.suggestion.Suggestion;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import edu.byu.minecraft.cat.CivsAndTitles;
@@ -9,13 +8,11 @@ import edu.byu.minecraft.cat.dataaccess.DataAccessException;
 import edu.byu.minecraft.cat.dataaccess.TitleDAO;
 import edu.byu.minecraft.cat.model.*;
 import edu.byu.minecraft.cat.util.TitleUtilities;
-import net.minecraft.command.CommandSource;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -47,6 +44,8 @@ public class SuggestionProviders {
 
     public static CompletableFuture<Suggestions> myTitles(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
         ServerPlayerEntity player = ctx.getSource().getPlayer();
+        if (player == null) return builder.buildFuture();
+
         return asyncSuggest(builder, () -> {
             try {
                 return TitleUtilities.getAllUsableTitles(player.getUuid());

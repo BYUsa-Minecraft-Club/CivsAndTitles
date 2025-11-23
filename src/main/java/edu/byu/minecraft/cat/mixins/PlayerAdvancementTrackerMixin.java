@@ -29,27 +29,6 @@ public class PlayerAdvancementTrackerMixin {
     @Shadow
     private ServerPlayerEntity owner;
 
-//    @Inject(method = "onStatusUpdate", at=@At("HEAD"))
-//    private void grantTitles(AdvancementEntry advancement, CallbackInfo ci) {
-//        if (CivsAndTitles.advancementsEnabled() && progress.get(advancement).isDone()) {
-//            AsyncUtilities.performAsync(owner.getEntityWorld().getServer(),() -> {
-//                DataAccess access = CivsAndTitles.getDataAccess();
-//                try {
-//                    for (Title title : access.getTitleDAO().getAllTitlesByAdvancement(advancement.toString())) {
-//                        access.getUnlockedTitleDAO().insert(new UnlockedTitle(owner.getUuid(), title.title(), Utilities.getTime()));
-//                        CivsAndTitles.LOGGER.info("Awarded title {} to player {} for earning advancement {}", title.title(), owner.getName().getString(), advancement);
-//                    }
-//                } catch (DataAccessException e) {
-//                    throw new RuntimeException(e);
-//                }
-//            }, error -> {
-//                CivsAndTitles.LOGGER.error("Database error automatically awarding titles to {}: ", owner.getName().getString(), error);
-//            }, error -> {
-//                CivsAndTitles.LOGGER.error("Unknown error automatically awarding titles to {}: ", owner.getName().getString(), error);
-//            });
-//        }
-//    }
-
     @Inject(method = "grantCriterion", at= @At(value = "INVOKE", target = "Lnet/minecraft/advancement/AdvancementRewards;apply(Lnet/minecraft/server/network/ServerPlayerEntity;)V"))
     private void grantTitles(AdvancementEntry advancement, String criterionName, CallbackInfoReturnable<Boolean> cir) {
         if (CivsAndTitles.advancementsEnabled() && progress.get(advancement).isDone()) {

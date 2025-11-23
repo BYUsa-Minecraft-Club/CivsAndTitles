@@ -26,30 +26,16 @@ public class SqliteTitleDAO extends SqliteDAO<Title> implements TitleDAO {
     protected SqliteTitleDAO() throws DataAccessException {
     }
 
-    /**
-     * @param s Unique key value to match against
-     * @return
-     * @throws DataAccessException
-     */
     @Override
     public Title get(String s) throws DataAccessException {
         return executeQuery("SELECT * FROM title WHERE name = ?", this::parseSingle, s);
     }
 
-    /**
-     * @return
-     * @throws DataAccessException
-     */
     @Override
     public Collection<Title> getAll() throws DataAccessException {
         return executeQuery("SELECT * FROM title", this::parseCollection);
     }
 
-    /**
-     * @param title object to insert
-     * @return
-     * @throws DataAccessException
-     */
     @Override
     public String insert(Title title) throws DataAccessException {
         String format = TextCodecs.CODEC.encodeStart(JsonOps.INSTANCE,title.format()).getOrThrow().toString();
@@ -58,19 +44,11 @@ public class SqliteTitleDAO extends SqliteDAO<Title> implements TitleDAO {
         return title.title();
     }
 
-    /**
-     * @param s unique key
-     * @throws DataAccessException
-     */
     @Override
     public void delete(String s) throws DataAccessException {
         executeUpdate("DELETE FROM title WHERE name = ?", s);
     }
 
-    /**
-     * @param title unique key and values to update to
-     * @throws DataAccessException
-     */
     @Override
     public void update(Title title) throws DataAccessException {
         String format = TextCodecs.CODEC.encodeStart(JsonOps.INSTANCE,title.format()).getOrThrow().toString();
@@ -78,11 +56,6 @@ public class SqliteTitleDAO extends SqliteDAO<Title> implements TitleDAO {
                 format, title.description(), title.type().name(), title.advancement().map(Identifier::toString).orElse(null), title.title());
     }
 
-    /**
-     * @param rs result set to retrieve row data from
-     * @return
-     * @throws SQLException
-     */
     @Override
     protected Title parse(ResultSet rs) throws SQLException {
         Gson gson = new Gson();

@@ -90,7 +90,7 @@ public class InteractiveDisplay <K, T> {
         return 1;
     }
     public void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        ArgumentBuilder<ServerCommandSource, ?> base = null;
+        LiteralArgumentBuilder<ServerCommandSource> base = null;
         ArgumentBuilder<ServerCommandSource, ?> tail = null;
         RequiredArgumentBuilder<ServerCommandSource, ?> arg = null;
 
@@ -112,6 +112,6 @@ public class InteractiveDisplay <K, T> {
         }
         base.requires(ServerCommandSource::isExecutedByPlayer);
 
-        dispatcher.register((LiteralArgumentBuilder<ServerCommandSource>)base);
+        dispatcher.register(base);
     }
 }

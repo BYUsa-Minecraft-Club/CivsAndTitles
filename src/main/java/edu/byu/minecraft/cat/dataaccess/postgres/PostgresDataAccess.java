@@ -81,7 +81,6 @@ public class PostgresDataAccess implements DataAccess {
      * @param statement SQL statement to execute containing an update statement without output. Contains '?'s equal to
      *                  the length of params
      * @param params    Array of objects as parameters to the sql statement
-     * @return Generated sql auto increment value, if applicable. 0 otherwise.
      * @throws DataAccessException if something goes wrong with sql execution
      */
     protected void executeUpdate(String statement, Object... params) throws DataAccessException {

@@ -3,7 +3,6 @@ package edu.byu.minecraft.cat.dataaccess.sqlite;
 import edu.byu.minecraft.cat.CivsAndTitles;
 import edu.byu.minecraft.cat.dataaccess.DataAccessException;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.InvalidHierarchicalFileException;
 
 import java.io.File;
 import java.io.InputStream;
@@ -37,11 +36,10 @@ public abstract class SqliteDAO<S> {
      * @param statement SQL statement to execute containing an update statement without output. Contains '?'s equal to
      *                  the length of params
      * @param params    Array of objects as parameters to the sql statement
-     * @return Generated sql auto increment value, if applicable. 0 otherwise.
      * @throws DataAccessException if something goes wrong with sql execution
      */
-    protected int executeUpdate(String statement, Object... params) throws DataAccessException {
-        return execute(conn -> {
+    protected void executeUpdate(String statement, Object... params) throws DataAccessException {
+        execute(conn -> {
             try (PreparedStatement ps = conn.prepareStatement(statement, Statement.RETURN_GENERATED_KEYS)) {
                 addParams(ps, params);
                 ps.executeUpdate();

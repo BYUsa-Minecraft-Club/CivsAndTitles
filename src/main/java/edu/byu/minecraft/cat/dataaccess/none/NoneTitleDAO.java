@@ -6,7 +6,6 @@ import edu.byu.minecraft.cat.model.Title;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 
 public class NoneTitleDAO implements TitleDAO {
     HashMap<String, Title> titles = new HashMap<>();

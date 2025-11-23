@@ -2,10 +2,8 @@ package edu.byu.minecraft.cat.dataaccess.postgres;
 
 import edu.byu.minecraft.cat.dataaccess.DataAccessException;
 import edu.byu.minecraft.cat.dataaccess.PlayerDAO;
-import edu.byu.minecraft.cat.dataaccess.sqlite.SqliteDAO;
 import edu.byu.minecraft.cat.model.Player;
 
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
@@ -16,36 +14,22 @@ public class PostgresPlayerDAO extends PostgresDAO<Player> implements PlayerDAO 
     /**
      * Constructs a new postgresql DAO
      *
-     * @param database
+     * @param database Access to the postgresql database
      */
     protected PostgresPlayerDAO(PostgresDataAccess database) {
         super(database);
     }
 
-    /**
-     * @param uuid Unique key value to match against
-     * @return
-     * @throws DataAccessException
-     */
     @Override
     public Player get(UUID uuid) throws DataAccessException {
         return database.executeQuery("SELECT * FROM player WHERE uuid = ?", this::parseSingle, uuid);
     }
 
-    /**
-     * @return
-     * @throws DataAccessException
-     */
     @Override
     public Collection<Player> getAll() throws DataAccessException {
         return database.executeQuery("SELECT * FROM player", this::parseCollection);
     }
 
-    /**
-     * @param player object to insert
-     * @return
-     * @throws DataAccessException
-     */
     @Override
     public UUID insert(Player player) throws DataAccessException {
         database.executeUpdate("INSERT INTO player (uuid, username, current_title) " +
@@ -53,42 +37,23 @@ public class PostgresPlayerDAO extends PostgresDAO<Player> implements PlayerDAO 
         return player.uuid();
     }
 
-    /**
-     * @param uuid unique key
-     * @throws DataAccessException
-     */
     @Override
     public void delete(UUID uuid) throws DataAccessException {
         database.executeUpdate("DELETE FROM player WHERE uuid = ?", uuid);
     }
 
-    /**
-     * @param player unique key and values to update to
-     * @throws DataAccessException
-     */
     @Override
     public void update(Player player) throws DataAccessException {
         database.executeUpdate("UPDATE player SET username = ?, current_title = ? WHERE uuid = ?",
                 player.name(), player.title(), player.uuid());
     }
 
-    /**
-     *  Gets a player's UUID using their username
-     * @param username the players username to search
-     * @return Players UUID
-     * @throws DataAccessException
-     */
     @Override
     public UUID getPlayerUUID(String username) throws DataAccessException {
         Player player = database.executeQuery("SELECT * FROM player WHERE username = ?", this::parseSingle, username);
         return player.uuid();
     }
 
-    /**
-     * @param rs result set to retrieve row data from
-     * @return
-     * @throws SQLException
-     */
     @Override
     protected Player parse(ResultSet rs) throws SQLException {
         return new Player(

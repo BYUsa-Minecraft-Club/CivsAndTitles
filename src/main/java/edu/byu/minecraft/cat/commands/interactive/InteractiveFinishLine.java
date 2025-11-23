@@ -2,7 +2,6 @@ package edu.byu.minecraft.cat.commands.interactive;
 
 import edu.byu.minecraft.cat.commands.interactive.parameters.InteractiveParameter;
 import net.minecraft.text.ClickEvent;
-import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;

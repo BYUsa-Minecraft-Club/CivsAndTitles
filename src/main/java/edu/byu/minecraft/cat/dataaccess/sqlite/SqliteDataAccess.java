@@ -13,28 +13,16 @@ public class SqliteDataAccess implements DataAccess {
         unlockedTitleDAO = new SqliteUnlockedTitleDAO();
     }
 
-    /**
-     * @return 
-     * @throws DataAccessException
-     */
     @Override
     public PlayerDAO getPlayerDAO() throws DataAccessException {
         return playerDAO;
     }
 
-    /**
-     * @return 
-     * @throws DataAccessException
-     */
     @Override
     public TitleDAO getTitleDAO() throws DataAccessException {
         return titleDAO;
     }
 
-    /**
-     * @return 
-     * @throws DataAccessException
-     */
     @Override
     public UnlockedTitleDAO getUnlockedTitleDAO() throws DataAccessException {
         return unlockedTitleDAO;

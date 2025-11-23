@@ -24,8 +24,7 @@ import static edu.byu.minecraft.cat.util.CommandUtilities.perform;
 
 public class AdminCommands {
     public static void registerCommands(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registryAccess, CommandManager.RegistrationEnvironment environment) {
-        dispatcher.register(literal("titles").then(literal("admin").requires(ServerCommandSource::isExecutedByPlayer).requires(src -> src.hasPermissionLevel(2))
-
+        dispatcher.register(literal("titles").then(literal("admin").requires(ServerCommandSource::isExecutedByPlayer).requires(PermissionCheckers::isAdmin)
                 .then(literal("giveTitle").then(argument("playerName", StringArgumentType.string()).suggests(SuggestionProviders::allPlayers).then(argument("title", StringArgumentType.string()).suggests(SuggestionProviders::playerUnawardedTitles).executes(AdminCommands::bestowTitle))))
                 .then(literal("revokeTitle").then(argument("playerName", StringArgumentType.string()).suggests(SuggestionProviders::allPlayers).then(argument("title", StringArgumentType.string()).suggests(SuggestionProviders::playersRemovableTitles).executes(AdminCommands::revokeTitle))))
                 .then(literal("deleteTitle").then(argument("title", StringArgumentType.string()).suggests(SuggestionProviders::allTitles).executes(AdminCommands::removeTitle)))
@@ -152,8 +151,6 @@ public class AdminCommands {
     /***
      * Gives a player a title.
      * Will fail if the player or the title doesn't exist.
-     * @param ctx
-     * @return
      */
     public static Integer bestowTitle(CommandContext<ServerCommandSource> ctx) {
         String player = ctx.getArgument("playerName", String.class);
@@ -168,8 +165,6 @@ public class AdminCommands {
 
     /***
      * Removes a title from a player.
-     * @param ctx
-     * @return
      */
     public static Integer revokeTitle(CommandContext<ServerCommandSource> ctx) {
         String player = ctx.getArgument("playerName", String.class);
@@ -184,8 +179,6 @@ public class AdminCommands {
 
     /***
      * Removes a title from the system.
-     * @param ctx
-     * @return
      */
     public static Integer removeTitle(CommandContext<ServerCommandSource> ctx) {
         String title = ctx.getArgument("title", String.class);

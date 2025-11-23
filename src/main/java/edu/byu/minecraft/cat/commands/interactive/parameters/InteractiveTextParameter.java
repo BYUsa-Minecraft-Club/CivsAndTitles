@@ -4,11 +4,9 @@ import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.argument.TextArgumentType;
-import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.text.TextCodecs;
 

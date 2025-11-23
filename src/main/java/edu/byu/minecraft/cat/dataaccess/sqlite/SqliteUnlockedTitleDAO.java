@@ -18,50 +18,27 @@ public class SqliteUnlockedTitleDAO extends SqliteDAO<UnlockedTitle> implements 
     protected SqliteUnlockedTitleDAO() throws DataAccessException {
     }
 
-    /**
-     * @param uuid uuid of player
-     * @return
-     * @throws DataAccessException
-     */
     @Override
     public Collection<UnlockedTitle> getAll(UUID uuid) throws DataAccessException {
         return executeQuery("SELECT * FROM player_title WHERE player_uuid = ?", this::parseCollection, uuid);
     }
 
-    /**
-     * @param title title to match
-     * @return
-     * @throws DataAccessException
-     */
     @Override
     public Collection<UnlockedTitle> getAll(String title) throws DataAccessException {
         return executeQuery("SELECT * FROM player_title WHERE title = ?", this::parseCollection, title);
     }
 
-    /**
-     * @param title unlocked title to add
-     * @throws DataAccessException
-     */
     @Override
     public void insert(UnlockedTitle title) throws DataAccessException {
         executeUpdate("INSERT OR IGNORE INTO player_title (player_uuid, title, date_earned) VALUES (?, ?, ?)",
                 title.uuid(), title.title(), title.earned());
     }
 
-    /**
-     * @param uuid  player to remove title from
-     * @param title title to remove
-     * @throws DataAccessException
-     */
     @Override
     public void delete(UUID uuid, String title) throws DataAccessException {
         executeUpdate("DELETE FROM player_title WHERE player_uuid = ? AND title = ?", uuid, title);
     }
 
-    /**
-     * @param title title to match
-     * @throws DataAccessException
-     */
     @Override
     public void deleteAll(String title) throws DataAccessException {
         executeUpdate("DELETE FROM player_title WHERE title = ?", title);
@@ -73,11 +50,6 @@ public class SqliteUnlockedTitleDAO extends SqliteDAO<UnlockedTitle> implements 
         return executeQuery("SELECT * FROM player_title WHERE player_uuid = ? AND title = ?", this::parseSingle, uuid, title);
     }
 
-    /**
-     * @param rs result set to retrieve row data from
-     * @return
-     * @throws SQLException
-     */
     @Override
     protected UnlockedTitle parse(ResultSet rs) throws SQLException {
         return new UnlockedTitle(

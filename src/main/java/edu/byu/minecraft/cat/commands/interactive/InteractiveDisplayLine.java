@@ -1,9 +1,7 @@
 package edu.byu.minecraft.cat.commands.interactive;
 
 import edu.byu.minecraft.cat.commands.interactive.parameters.InteractiveParameter;
-import edu.byu.minecraft.cat.commands.interactive.parameters.InteractiveTextParameter;
 import joptsimple.ValueConversionException;
-import net.minecraft.text.ClickEvent;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
@@ -14,7 +12,7 @@ import java.util.Collections;
 import java.util.Map;
 
 public class InteractiveDisplayLine<T> implements InteractiveLine<T> {
-    private InteractiveParameter<T> param;
+    private final InteractiveParameter<T> param;
     public InteractiveDisplayLine(InteractiveParameter<T> param){
         this.param = param;
     }

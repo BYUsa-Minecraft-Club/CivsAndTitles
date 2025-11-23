@@ -13,7 +13,7 @@ import java.util.Collections;
 import java.util.Map;
 
 public class InteractiveParameterLine<T> implements InteractiveLine<T> {
-    private InteractiveParameter<T> param;
+    private final InteractiveParameter<T> param;
     public InteractiveParameterLine(InteractiveParameter<T> param){
         this.param = param;
     }

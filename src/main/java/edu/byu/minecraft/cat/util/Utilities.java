@@ -1,7 +1,5 @@
 package edu.byu.minecraft.cat.util;
 
-import net.minecraft.server.network.ServerPlayerEntity;
-
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 

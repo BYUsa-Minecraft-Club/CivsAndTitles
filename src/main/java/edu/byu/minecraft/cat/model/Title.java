@@ -14,7 +14,7 @@ import java.util.Optional;
  * @param description title description, what was required to acquire the title, possible lore
  */
 public record Title(String title, Text format, String description, Type type, Optional<Identifier> advancement) {
-   public enum Type {
+    public enum Type {
         DEFAULT,
         WORLD,
         PERMANENT,
