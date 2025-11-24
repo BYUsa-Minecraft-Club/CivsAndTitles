@@ -36,9 +36,12 @@ public class TitleCommands {
     public static void registerCommands(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registryAccess, CommandManager.RegistrationEnvironment environment) {
         dispatcher.register(literal("titles").requires(ServerCommandSource::isExecutedByPlayer)
         //        .then(literal("list").executes(TitleCommands::listTitles))
-                .then(literal("clear").executes(TitleCommands::clearTitle))
+                .then(literal("clear")
+                        .requires(PermissionCheckers.APPLY_PERMISSION)
+                        .executes(TitleCommands::clearTitle))
                 .then(literal("change")
-                        .then(argument("title", StringArgumentType.string()).suggests(SuggestionProviders::myTitles).requires(PermissionCheckers::hasTitle).executes(TitleCommands::changeTitle)))
+                        .requires(PermissionCheckers.APPLY_PERMISSION)
+                        .then(argument("title", StringArgumentType.string()).suggests(SuggestionProviders::myTitles).executes(TitleCommands::changeTitle)))
 //
 //                .then(literal("showRank")
 //                        .then(argument("showRank", BoolArgumentType.bool()).executes(TitleCommands::showRank)))
@@ -48,7 +51,7 @@ public class TitleCommands {
             @Override
             public Text getSimpleText(Title title , CommandContext<ServerCommandSource> ctx) {
                 MutableText text = Text.empty();
-                text.append(title.format());//Text.literal(title.title()).setStyle(Style.EMPTY.withColor(Formatting.valueOf(title.format().toUpperCase())).withBold(Boolean.TRUE)));
+                text.append(title.format());
                 text.append(Text.literal(" - "));
                 ServerPlayerEntity player = ctx.getSource().getPlayer();
                 try {

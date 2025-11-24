@@ -15,9 +15,11 @@ import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
 
 import static com.mojang.brigadier.builder.LiteralArgumentBuilder.literal;
 import static com.mojang.brigadier.builder.RequiredArgumentBuilder.argument;
@@ -108,7 +110,7 @@ public class InteractiveManager {
         finishConsumer = consumer;
         return this;
     }
-    public void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registryAccess) {
+    public void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registryAccess, @Nullable Predicate<ServerCommandSource> permission) {
         ArgumentBuilder<ServerCommandSource, ?> top;
         LiteralArgumentBuilder<ServerCommandSource> base;
         ArgumentBuilder<ServerCommandSource, ?> tail;
@@ -172,20 +174,7 @@ public class InteractiveManager {
             base.then(tail);
         }
         base.requires(ServerCommandSource::isExecutedByPlayer);
-
-        if(startArg != null)
-        {
-            RequiredArgumentBuilder<ServerCommandSource, ?> arg2 = argument(startArg.getName(), startArg.getCommandArgumentType(registryAccess));
-            SuggestionProvider<ServerCommandSource> suggester = startArg.getSuggestionProvider();
-            if (suggester != null) {
-                arg2.suggests(suggester);
-            }
-            arg2.executes(this::startInteractive);
-            base.then(arg2);
-        }
-        else {
-            base.executes(this::startInteractive);
-        }
+        if (permission != null) base.requires(permission);
 
         dispatcher.register(base);
     }

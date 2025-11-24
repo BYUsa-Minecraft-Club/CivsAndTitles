@@ -24,11 +24,19 @@ import static edu.byu.minecraft.cat.util.CommandUtilities.perform;
 
 public class AdminCommands {
     public static void registerCommands(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registryAccess, CommandManager.RegistrationEnvironment environment) {
-        dispatcher.register(literal("titles").then(literal("admin").requires(ServerCommandSource::isExecutedByPlayer).requires(PermissionCheckers::isAdmin)
-                .then(literal("giveTitle").then(argument("playerName", StringArgumentType.string()).suggests(SuggestionProviders::allPlayers).then(argument("title", StringArgumentType.string()).suggests(SuggestionProviders::playerUnawardedTitles).executes(AdminCommands::bestowTitle))))
-                .then(literal("revokeTitle").then(argument("playerName", StringArgumentType.string()).suggests(SuggestionProviders::allPlayers).then(argument("title", StringArgumentType.string()).suggests(SuggestionProviders::playersRemovableTitles).executes(AdminCommands::revokeTitle))))
-                .then(literal("deleteTitle").then(argument("title", StringArgumentType.string()).suggests(SuggestionProviders::allTitles).executes(AdminCommands::removeTitle)))
-                .then(literal("clearWorldTitles").executes(AdminCommands::clearWorldTitles))
+        dispatcher.register(literal("titles").then(literal("admin").requires(ServerCommandSource::isExecutedByPlayer).requires(PermissionCheckers.ADMIN_PERMISSION)
+                .then(literal("giveTitle")
+                        .requires(PermissionCheckers.AWARD_PERMISSION)
+                        .then(argument("playerName", StringArgumentType.string()).suggests(SuggestionProviders::allPlayers).then(argument("title", StringArgumentType.string()).suggests(SuggestionProviders::playerUnawardedTitles).executes(AdminCommands::bestowTitle))))
+                .then(literal("revokeTitle")
+                        .requires(PermissionCheckers.AWARD_PERMISSION)
+                        .then(argument("playerName", StringArgumentType.string()).suggests(SuggestionProviders::allPlayers).then(argument("title", StringArgumentType.string()).suggests(SuggestionProviders::playersRemovableTitles).executes(AdminCommands::revokeTitle))))
+                .then(literal("deleteTitle")
+                        .requires(PermissionCheckers.MODIFY_PERMISSION)
+                        .then(argument("title", StringArgumentType.string()).suggests(SuggestionProviders::allTitles).executes(AdminCommands::removeTitle)))
+                .then(literal("clearWorldTitles")
+                        .requires(PermissionCheckers.CLEAR_WORLD_TITLES_PERMISSION)
+                        .executes(AdminCommands::clearWorldTitles))
         ));
 
         new InteractiveManager(Arrays.asList("titles", "admin", "create"))
@@ -53,7 +61,7 @@ public class AdminCommands {
 
                 })))
                 .addLine(new InteractiveParameterLine<>(new InteractiveAdvancementParameter("Advancement").setOptional(true)))
-                .addLine(new InteractiveFinishLine()).setDataHandler(AdminCommands::finishTitleCreation).register(dispatcher, registryAccess);
+                .addLine(new InteractiveFinishLine()).setDataHandler(AdminCommands::finishTitleCreation).register(dispatcher, registryAccess, PermissionCheckers.MODIFY_PERMISSION);
 
         InteractiveParameter<String> titleNameParam = new InteractiveStringParameter("Name").setValidator((x)-> {
             try {
@@ -108,7 +116,7 @@ public class AdminCommands {
                                 throw new RuntimeException(e);
                             }
                         })))
-                .addLine(new InteractiveFinishLine()).setDataHandler(AdminCommands::finishTitleEdit).register(dispatcher, registryAccess);
+                .addLine(new InteractiveFinishLine()).setDataHandler(AdminCommands::finishTitleEdit).register(dispatcher, registryAccess, PermissionCheckers.MODIFY_PERMISSION);
 
 
 

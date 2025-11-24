@@ -20,13 +20,15 @@ public class PostgresDataAccess implements DataAccess {
 
     public PostgresDataAccess(PostgresConfig config) throws DataAccessException {
         try {
+            Class.forName("org.postgresql.Driver");
+
             database = DriverManager.getConnection(config.toJdbcUrl(), config.username(), config.password());
             configureDatabase();
 
             playerDAO = new PostgresPlayerDAO(this);
             titleDAO = new PostgresTitleDAO(this);
             unlockedTitleDAO = new PostgresUnlockedTitleDAO(this);
-        } catch (SQLException e) {
+        } catch (SQLException | ClassNotFoundException e) {
             CivsAndTitles.LOGGER.error("Error connecting to Postgresql:", e);
             CivsAndTitles.LOGGER.warn("Falling back to SqLite");
             fallback = new SqliteDataAccess();
