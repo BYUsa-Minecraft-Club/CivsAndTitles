@@ -8,8 +8,8 @@ import edu.byu.minecraft.cat.dataaccess.DataAccessException;
 import edu.byu.minecraft.cat.dataaccess.TitleDAO;
 import edu.byu.minecraft.cat.model.*;
 import edu.byu.minecraft.cat.util.TitleUtilities;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.server.level.ServerPlayer;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -26,7 +26,7 @@ public class SuggestionProviders {
             return builder.build();
         });
     }
-    public static CompletableFuture<Suggestions> allPlayers(CommandContext<ServerCommandSource> ignoredCtx, SuggestionsBuilder builder) {
+    public static CompletableFuture<Suggestions> allPlayers(CommandContext<CommandSourceStack> ignoredCtx, SuggestionsBuilder builder) {
         return asyncSuggest(builder, () -> {
             try {
                 return CivsAndTitles.getDataAccess().getPlayerDAO().getAll().stream().map(Player::name).toList();
@@ -36,26 +36,26 @@ public class SuggestionProviders {
         });
     }
 
-    public static CompletableFuture<Suggestions> titleType(CommandContext<ServerCommandSource> ignoredCtx, SuggestionsBuilder builder) {
+    public static CompletableFuture<Suggestions> titleType(CommandContext<CommandSourceStack> ignoredCtx, SuggestionsBuilder builder) {
         Arrays.stream(Title.Type.values()).map(Title.Type::name).forEach(builder::suggest);
         return builder.buildFuture();
     }
 
 
-    public static CompletableFuture<Suggestions> myTitles(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
-        ServerPlayerEntity player = ctx.getSource().getPlayer();
+    public static CompletableFuture<Suggestions> myTitles(CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
+        ServerPlayer player = ctx.getSource().getPlayer();
         if (player == null) return builder.buildFuture();
 
         return asyncSuggest(builder, () -> {
             try {
-                return TitleUtilities.getAllUsableTitles(player.getUuid());
+                return TitleUtilities.getAllUsableTitles(player.getUUID());
             } catch (DataAccessException e) {
                 throw new RuntimeException(e);
             }
         });
     }
 
-    public static CompletableFuture<Suggestions> allTitles(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
+    public static CompletableFuture<Suggestions> allTitles(CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
         return asyncSuggest(builder, () -> {
             try {
                 Stream<String> titles = CivsAndTitles.getDataAccess().getTitleDAO().getAll().stream().map(Title::title);
@@ -66,7 +66,7 @@ public class SuggestionProviders {
         });
     }
 
-    public static CompletableFuture<Suggestions> playersTitles(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
+    public static CompletableFuture<Suggestions> playersTitles(CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
         String playerName = ctx.getArgument("playerName", String.class);
         return asyncSuggest(builder, () -> {
             try {
@@ -79,7 +79,7 @@ public class SuggestionProviders {
         });
     }
 
-    public static CompletableFuture<Suggestions> playerUnawardedTitles(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
+    public static CompletableFuture<Suggestions> playerUnawardedTitles(CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
         String playerName = ctx.getArgument("playerName", String.class);
         return asyncSuggest(builder, () -> {
             try {
@@ -102,7 +102,7 @@ public class SuggestionProviders {
         });
     }
 
-    public static CompletableFuture<Suggestions> playersRemovableTitles(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
+    public static CompletableFuture<Suggestions> playersRemovableTitles(CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
         String playerName = ctx.getArgument("playerName", String.class);
         return asyncSuggest(builder, () -> {
             try {

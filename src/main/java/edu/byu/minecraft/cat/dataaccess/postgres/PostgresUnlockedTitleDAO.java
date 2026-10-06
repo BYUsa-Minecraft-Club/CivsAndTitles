@@ -2,10 +2,8 @@ package edu.byu.minecraft.cat.dataaccess.postgres;
 
 import edu.byu.minecraft.cat.dataaccess.DataAccessException;
 import edu.byu.minecraft.cat.dataaccess.UnlockedTitleDAO;
-import edu.byu.minecraft.cat.dataaccess.sqlite.SqliteDAO;
 import edu.byu.minecraft.cat.model.UnlockedTitle;
 
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;

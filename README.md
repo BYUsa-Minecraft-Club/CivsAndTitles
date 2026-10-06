@@ -63,7 +63,7 @@ All CivsAndTitles config is stored in the civsandtitles folder in your server's 
 - postgres.json is configuration for the postgres storage option when it is enabled
 - database.db is all the titles data when sqlite is the selected storage
 
-Actually displaying titles is done either by modifying the player's display name directly or through the placeholder api in mods like styled chat. The placeholder to use is `byu:title`.
+Actually displaying titles is done either by modifying the player's display name directly or through the placeholder api in mods like styled chat. The placeholder to use is `titles:title`.
 Make sure to configure your server correctly, or titles won't show!
 
 #### config.json

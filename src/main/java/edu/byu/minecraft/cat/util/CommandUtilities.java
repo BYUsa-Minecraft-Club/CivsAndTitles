@@ -2,10 +2,10 @@ package edu.byu.minecraft.cat.util;
 
 import com.mojang.brigadier.context.CommandContext;
 import edu.byu.minecraft.cat.CivsAndTitles;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.HoverEvent;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.Style;
 
 import java.util.function.Supplier;
 
@@ -22,24 +22,24 @@ public class CommandUtilities {
      * @param onError A Text supplier to be sent as feedback on error
      */
     public static int perform(
-            CommandContext<ServerCommandSource> ctx,
+            CommandContext<CommandSourceStack> ctx,
             Supplier<Boolean> action,
-            Supplier<Text> onSuccess,
-            Supplier<Text> onError) {
+            Supplier<Component> onSuccess,
+            Supplier<Component> onError) {
         AsyncUtilities.performAsync(ctx.getSource().getServer(),
                 action,
                 failed -> {
-                    if (failed) ctx.getSource().sendError(onError.get());
-                    else ctx.getSource().sendFeedback(onSuccess, false);
+                    if (failed) ctx.getSource().sendFailure(onError.get());
+                    else ctx.getSource().sendSuccess(onSuccess, false);
                 },
                 error -> {
-                    ctx.getSource().sendError(Text.literal("An error occurred accessing the database")
-                            .setStyle(Style.EMPTY.withHoverEvent(new HoverEvent.ShowText(Text.of(error.toString())))));
+                    ctx.getSource().sendFailure(Component.literal("An error occurred accessing the database")
+                            .setStyle(Style.EMPTY.withHoverEvent(new HoverEvent.ShowText(Component.literal(error.toString())))));
                     CivsAndTitles.LOGGER.error("An error occurred accessing the database: ",error);
                 },
                 error -> {
-                    ctx.getSource().sendError(Text.literal("An unknown error occurred running that command")
-                            .setStyle(Style.EMPTY.withHoverEvent(new HoverEvent.ShowText(Text.of(error.toString())))));
+                    ctx.getSource().sendFailure(Component.literal("An unknown error occurred running that command")
+                            .setStyle(Style.EMPTY.withHoverEvent(new HoverEvent.ShowText(Component.literal(error.toString())))));
                     CivsAndTitles.LOGGER.error("An unknown error occurred: ",error);
                 });
         return 0;

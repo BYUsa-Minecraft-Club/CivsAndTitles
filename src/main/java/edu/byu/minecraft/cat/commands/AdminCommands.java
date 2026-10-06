@@ -8,23 +8,27 @@ import edu.byu.minecraft.cat.commands.interactive.parameters.*;
 import edu.byu.minecraft.cat.dataaccess.*;
 import edu.byu.minecraft.cat.model.*;
 import edu.byu.minecraft.cat.util.TitleUtilities;
-import net.minecraft.advancement.AdvancementEntry;
-import net.minecraft.command.CommandRegistryAccess;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import net.minecraft.advancements.AdvancementHolder;
+import net.minecraft.commands.CommandBuildContext;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 
 import java.util.*;
 
 import static edu.byu.minecraft.cat.CivsAndTitles.getDataAccess;
-import static net.minecraft.server.command.CommandManager.argument;
-import static net.minecraft.server.command.CommandManager.literal;
 import static edu.byu.minecraft.cat.util.CommandUtilities.perform;
+import static net.minecraft.commands.Commands.argument;
+import static net.minecraft.commands.Commands.literal;
 
 public class AdminCommands {
-    public static void registerCommands(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registryAccess, CommandManager.RegistrationEnvironment environment) {
-        dispatcher.register(literal("titles").then(literal("admin").requires(ServerCommandSource::isExecutedByPlayer).requires(PermissionCheckers.ADMIN_PERMISSION)
+    public static void registerCommands(
+            CommandDispatcher<CommandSourceStack> dispatcher,
+            CommandBuildContext registryAccess,
+            Commands.CommandSelection environment
+    ) {
+        dispatcher.register(literal("titles").then(literal("admin").requires(CommandSourceStack::isPlayer).requires(PermissionCheckers.ADMIN_PERMISSION)
                 .then(literal("giveTitle")
                         .requires(PermissionCheckers.AWARD_PERMISSION)
                         .then(argument("playerName", StringArgumentType.string()).suggests(SuggestionProviders::allPlayers).then(argument("title", StringArgumentType.string()).suggests(SuggestionProviders::playerUnawardedTitles).executes(AdminCommands::bestowTitle))))
@@ -40,7 +44,7 @@ public class AdminCommands {
         ));
 
         new InteractiveManager(Arrays.asList("titles", "admin", "create"))
-                .addLine(new InteractiveTextLine(Text.literal("Title Creation")))
+                .addLine(new InteractiveTextLine(Component.literal("Title Creation")))
                 .addLine(new InteractiveParameterLine<>(new InteractiveStringParameter("Name").setValidator((x)-> {
                     try {
                         return getDataAccess().getTitleDAO().get(x) == null;
@@ -71,7 +75,7 @@ public class AdminCommands {
             }
         }).setSuggestionProvider(SuggestionProviders::allTitles);
         new InteractiveManager(Arrays.asList("titles", "admin", "edit")).setStartArg(titleNameParam)
-                .addLine(new InteractiveTextLine(Text.literal("Title Edit")))
+                .addLine(new InteractiveTextLine(Component.literal("Title Edit")))
                 .addLine(new InteractiveDisplayLine<>(titleNameParam))
                 .addLine(new InteractiveParameterLine<>(new InteractiveStringParameter("Description", true).setDefaultProvider(
                         (ctx)-> {
@@ -109,9 +113,17 @@ public class AdminCommands {
                 .addLine(new InteractiveParameterLine<>(new InteractiveAdvancementParameter("Advancement").setOptional(true)
                         .setDefaultProvider((ctx) -> {
                             try {
-                                Optional<Identifier> advancement = getDataAccess().getTitleDAO().get(ctx.getArgument("Name", String.class)).advancement();
-                                if (advancement.isPresent()) return new AdvancementEntry(getDataAccess().getTitleDAO().get(ctx.getArgument("Name", String.class)).advancement().orElse(null), null);
-                                else return null;
+                                TitleDAO titleDAO = getDataAccess().getTitleDAO();
+                                return titleDAO.get(ctx.getArgument("Name", String.class)).advancement()
+                                        .flatMap(id -> {
+                                            try {
+                                                return titleDAO.get(ctx.getArgument("Name", String.class)).advancement();
+                                            } catch (DataAccessException e) {
+                                                return Optional.empty();
+                                            }
+                                        })
+                                        .flatMap(id -> Optional.ofNullable(ctx.getSource().getServer().getAdvancements().get(id)))
+                                        .orElse(null);
                             } catch (DataAccessException e) {
                                 throw new RuntimeException(e);
                             }
@@ -122,86 +134,86 @@ public class AdminCommands {
 
     }
 
-    private static Integer finishTitleCreation(CommandContext<ServerCommandSource> ctx, Map<String, Object> parameters){
+    private static Integer finishTitleCreation(CommandContext<CommandSourceStack> ctx, Map<String, Object> parameters){
         String name = (String)parameters.get("Name");
-        Text format = (Text) parameters.get("Format");
+        Component format = (Component) parameters.get("Format");
         String type = (String)parameters.get("Type");
         String description = (String)parameters.get("Description");
-        AdvancementEntry advancementEntry = (AdvancementEntry) parameters.get("Advancement");
+        AdvancementHolder advancementEntry = (AdvancementHolder) parameters.get("Advancement");
         Optional<Identifier> advancement = advancementEntry == null ? Optional.empty() : Optional.of(advancementEntry.id());
 
         Title newTitle = new Title(name, format, description, Title.Type.valueOf(type), advancement);
 
-        ctx.getSource().sendFeedback(() -> Text.of("Creating new title " + name + "..."), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("Creating new title " + name + "..."), false);
 
         return perform(ctx, TitleUtilities.addTitle(newTitle),
-                () -> Text.of("Created new Title " + name),
-                () -> Text.of("Title " + name + " already exists"));
+                () -> Component.literal("Created new Title " + name),
+                () -> Component.literal("Title " + name + " already exists"));
     }
 
-    private static Integer finishTitleEdit(CommandContext<ServerCommandSource> ctx, Map<String, Object> parameters){
+    private static Integer finishTitleEdit(CommandContext<CommandSourceStack> ctx, Map<String, Object> parameters){
         String name = (String)parameters.get("Name");
-        Text format = (Text) parameters.get("Format");
+        Component format = (Component) parameters.get("Format");
         String type = (String)parameters.get("Type");
         String description = (String)parameters.get("Description");
-        AdvancementEntry advancementEntry = (AdvancementEntry) parameters.get("Advancement");
+        AdvancementHolder advancementEntry = (AdvancementHolder) parameters.get("Advancement");
         Optional<Identifier> advancement = advancementEntry == null ? Optional.empty() : Optional.of(advancementEntry.id());
 
         Title newTitle = new Title(name, format, description, Title.Type.valueOf(type), advancement);
 
-        ctx.getSource().sendFeedback(() -> Text.of("Editing title " + name + "..."), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("Editing title " + name + "..."), false);
 
         return perform(ctx, TitleUtilities.editTitle(newTitle),
-                () -> Text.of("Successfully modified Title " + name),
-                () -> Text.of("Title " + name + " does not exist"));
+                () -> Component.literal("Successfully modified Title " + name),
+                () -> Component.literal("Title " + name + " does not exist"));
     }
 
     /***
      * Gives a player a title.
      * Will fail if the player or the title doesn't exist.
      */
-    public static Integer bestowTitle(CommandContext<ServerCommandSource> ctx) {
+    public static Integer bestowTitle(CommandContext<CommandSourceStack> ctx) {
         String player = ctx.getArgument("playerName", String.class);
         String title = ctx.getArgument("title", String.class);
 
-        ctx.getSource().sendFeedback(() -> Text.of("Awarding title " + title + " to " + player + "..."), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("Awarding title " + title + " to " + player + "..."), false);
 
         return perform(ctx, TitleUtilities.awardTitle(player, title),
-                () -> Text.of("Awarded title " + title + " to " + player),
-                () -> Text.of(player + " already has title " + title));
+                () -> Component.literal("Awarded title " + title + " to " + player),
+                () -> Component.literal(player + " already has title " + title));
     }
 
     /***
      * Removes a title from a player.
      */
-    public static Integer revokeTitle(CommandContext<ServerCommandSource> ctx) {
+    public static Integer revokeTitle(CommandContext<CommandSourceStack> ctx) {
         String player = ctx.getArgument("playerName", String.class);
         String title = ctx.getArgument("title", String.class);
 
-        ctx.getSource().sendFeedback(() -> Text.of("Revoking title " + title + "from " + player + "..."), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("Revoking title " + title + "from " + player + "..."), false);
 
         return perform(ctx, TitleUtilities.revokeTitle(player, title),
-                () -> Text.of("Removed title " + title + " from " + player),
-                () -> Text.of(player + " does not have title " + title));
+                () -> Component.literal("Removed title " + title + " from " + player),
+                () -> Component.literal(player + " does not have title " + title));
     }
 
     /***
      * Removes a title from the system.
      */
-    public static Integer removeTitle(CommandContext<ServerCommandSource> ctx) {
+    public static Integer removeTitle(CommandContext<CommandSourceStack> ctx) {
         String title = ctx.getArgument("title", String.class);
 
-        ctx.getSource().sendFeedback(() -> Text.of("Deleting title " + title + "..."), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("Deleting title " + title + "..."), false);
 
         return perform(ctx, TitleUtilities.deleteTitle(title),
-                () -> Text.of("Deleted title " + title),
-                () -> Text.of("Title " + title + " does not exist"));
+                () -> Component.literal("Deleted title " + title),
+                () -> Component.literal("Title " + title + " does not exist"));
     }
 
-    public static Integer clearWorldTitles(CommandContext<ServerCommandSource> ctx) {
-        ctx.getSource().sendFeedback(() -> Text.of("Clearing world titles..."), false);
+    public static Integer clearWorldTitles(CommandContext<CommandSourceStack> ctx) {
+        ctx.getSource().sendSuccess(() -> Component.literal("Clearing world titles..."), false);
         return perform(ctx, TitleUtilities.clearWorldTitles(),
-                () -> Text.of("Cleared all world titles"),
-                () -> Text.of("This error message will never appear"));
+                () -> Component.literal("Cleared all world titles"),
+                () -> Component.literal("This error message will never appear"));
     }
 }

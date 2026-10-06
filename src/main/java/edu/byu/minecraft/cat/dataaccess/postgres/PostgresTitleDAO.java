@@ -5,13 +5,11 @@ import com.google.gson.JsonElement;
 import com.mojang.serialization.JsonOps;
 import edu.byu.minecraft.cat.dataaccess.DataAccessException;
 import edu.byu.minecraft.cat.dataaccess.TitleDAO;
-import edu.byu.minecraft.cat.dataaccess.sqlite.SqliteDAO;
 import edu.byu.minecraft.cat.model.Title;
-import net.minecraft.text.Text;
-import net.minecraft.text.TextCodecs;
-import net.minecraft.util.Identifier;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentSerialization;
+import net.minecraft.resources.Identifier;
 
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
@@ -41,7 +39,7 @@ public class PostgresTitleDAO extends PostgresDAO<Title> implements TitleDAO {
 
     @Override
     public String insert(Title title) throws DataAccessException {
-        String format = TextCodecs.CODEC.encodeStart(JsonOps.INSTANCE,title.format()).getOrThrow().toString();
+        String format = ComponentSerialization.CODEC.encodeStart(JsonOps.INSTANCE, title.format()).getOrThrow().toString();
         database.executeUpdate("INSERT INTO title (name, format, description, type, advancement) VALUES (?, ?, ?, ?, ?)",
                 title.title(), format, title.description(), title.type().name(), title.advancement().map(Identifier::toString).orElse(null));
         return title.title();
@@ -54,7 +52,7 @@ public class PostgresTitleDAO extends PostgresDAO<Title> implements TitleDAO {
 
     @Override
     public void update(Title title) throws DataAccessException {
-        String format = TextCodecs.CODEC.encodeStart(JsonOps.INSTANCE,title.format()).getOrThrow().toString();
+        String format = ComponentSerialization.CODEC.encodeStart(JsonOps.INSTANCE,title.format()).getOrThrow().toString();
         database.executeUpdate("UPDATE title SET format = ?, description = ?, type = ?, advancement = ? WHERE name = ?",
                 format, title.description(), title.type().name(), title.advancement().map(Identifier::toString).orElse(null), title.title());
     }
@@ -63,14 +61,14 @@ public class PostgresTitleDAO extends PostgresDAO<Title> implements TitleDAO {
     protected Title parse(ResultSet rs) throws SQLException {
         Gson gson = new Gson();
         JsonElement json = new Gson().fromJson(rs.getString("format"), JsonElement.class);
-        Text format = TextCodecs.CODEC.parse(JsonOps.INSTANCE, json).getPartialOrThrow();
+        Component format = ComponentSerialization.CODEC.parse(JsonOps.INSTANCE, json).getPartialOrThrow();
         String advancement = rs.getString("advancement");
         return new Title(
                 rs.getString("name"),
                 format,
                 rs.getString("description"),
                 Title.Type.valueOf(rs.getString("type")),
-                advancement == null ? Optional.empty() : Optional.of(Identifier.of(advancement))
+                advancement == null ? Optional.empty() : Optional.of(Identifier.parse(advancement))
         );
     }
 

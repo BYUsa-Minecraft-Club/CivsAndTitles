@@ -8,13 +8,13 @@ import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import net.minecraft.command.CommandSource;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.ClickEvent;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 
 import java.util.Collection;
 import java.util.List;
@@ -30,17 +30,17 @@ public class InteractiveDisplay <K, T> {
     private final DisplayProvider<K,T> provider;
     private final KeyInfo<K> keyInfo;
     public interface DisplayProvider<K, T> {
-        Text getSimpleText(T t, CommandContext<ServerCommandSource> ctx);
-        Text getDetailedText(T t, CommandContext<ServerCommandSource> ctx);
-        Collection<T> getValues(CommandContext<ServerCommandSource> ctx);
-        Collection<K> getKeys(CommandContext<ServerCommandSource> ctx);
+        Component getSimpleText(T t, CommandContext<CommandSourceStack> ctx);
+        Component getDetailedText(T t, CommandContext<CommandSourceStack> ctx);
+        Collection<T> getValues(CommandContext<CommandSourceStack> ctx);
+        Collection<K> getKeys(CommandContext<CommandSourceStack> ctx);
         T getValue(K key);
 
         K getKey(T value);
     }
 
     public interface KeyInfo <K>{
-        K extractKey(CommandContext<ServerCommandSource> ctx);
+        K extractKey(CommandContext<CommandSourceStack> ctx);
         String getKeyName();
         ArgumentType<?> getArgumentType();
     }
@@ -50,9 +50,9 @@ public class InteractiveDisplay <K, T> {
         this.basePath = basePath;
         this.keyInfo = keyInfo;
     }
-    private CompletableFuture<Suggestions> suggestionProvider(CommandContext<ServerCommandSource> ctx, SuggestionsBuilder builder) {
+    private CompletableFuture<Suggestions> suggestionProvider(CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
         Stream<K> keys = provider.getKeys(ctx).stream();
-        keys = keys.filter(s -> CommandSource.shouldSuggest(builder.getRemaining().toLowerCase(), s.toString().toLowerCase()));
+        keys = keys.filter(s -> SharedSuggestionProvider.matchesSubStr(builder.getRemaining().toLowerCase(), s.toString().toLowerCase()));
         keys.forEach(i -> builder.suggest(i.toString()));
         return builder.buildFuture();
     }
@@ -67,32 +67,32 @@ public class InteractiveDisplay <K, T> {
         builder.append(key);
         return builder.toString();
     }
-    private Integer showList (CommandContext<ServerCommandSource> ctx) {
+    private Integer showList (CommandContext<CommandSourceStack> ctx) {
         for(T val: provider.getValues(ctx)){
-            MutableText root = Text.literal("");
-            Text text = provider.getSimpleText(val, ctx);
-            Text button = Text.literal("  (details)").setStyle(Style.EMPTY.withColor(Formatting.YELLOW).withClickEvent(new ClickEvent.RunCommand(makeDisplayIndCommand(provider.getKey(val)))));
+            MutableComponent root = Component.literal("");
+            Component text = provider.getSimpleText(val, ctx);
+            Component button = Component.literal("  (details)").setStyle(Style.EMPTY.withColor(ChatFormatting.YELLOW).withClickEvent(new ClickEvent.RunCommand(makeDisplayIndCommand(provider.getKey(val)))));
             root.append(text);
             root.append(button);
-            ctx.getSource().sendFeedback(()-> root, false);
+            ctx.getSource().sendSuccess(()-> root, false);
         }
         return 1;
     }
-    private Integer showIndividual(CommandContext<ServerCommandSource> ctx){
+    private Integer showIndividual(CommandContext<CommandSourceStack> ctx){
         K key = keyInfo.extractKey(ctx);
         T val = provider.getValue(key);
         if(val == null)
         {
-            ctx.getSource().sendFeedback(()-> Text.literal("Invalid " + keyInfo.getKeyName() + ": " + key.toString()), false);
+            ctx.getSource().sendSuccess(()-> Component.literal("Invalid " + keyInfo.getKeyName() + ": " + key.toString()), false);
             return 0;
         }
-        ctx.getSource().sendFeedback(()-> provider.getDetailedText(val, ctx), false);
+        ctx.getSource().sendSuccess(()-> provider.getDetailedText(val, ctx), false);
         return 1;
     }
-    public void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        LiteralArgumentBuilder<ServerCommandSource> base = null;
-        ArgumentBuilder<ServerCommandSource, ?> tail = null;
-        RequiredArgumentBuilder<ServerCommandSource, ?> arg = null;
+    public void register(CommandDispatcher<CommandSourceStack> dispatcher) {
+        LiteralArgumentBuilder<CommandSourceStack> base = null;
+        ArgumentBuilder<CommandSourceStack, ?> tail = null;
+        RequiredArgumentBuilder<CommandSourceStack, ?> arg = null;
 
         base = literal(basePath.getLast());
         tail = literal("detail");
@@ -110,7 +110,7 @@ public class InteractiveDisplay <K, T> {
             base = literal(basePath.get(i));
             base.then(tail);
         }
-        base.requires(ServerCommandSource::isExecutedByPlayer);
+        base.requires(CommandSourceStack::isPlayer);
 
         dispatcher.register(base);
     }

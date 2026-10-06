@@ -4,9 +4,9 @@ import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
-import net.minecraft.command.CommandRegistryAccess;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.Text;
+import net.minecraft.commands.CommandBuildContext;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Function;
@@ -15,11 +15,11 @@ import java.util.function.Predicate;
 public abstract class InteractiveParameter<T> {
     final Class<T> type;
     String name;
-    SuggestionProvider<ServerCommandSource> suggestionProvider;
+    SuggestionProvider<CommandSourceStack> suggestionProvider;
 
     @Nullable
     T defaultVal;
-    Function<CommandContext<ServerCommandSource>, T> defaultValProvider;
+    Function<CommandContext<CommandSourceStack>, T> defaultValProvider;
 
     Predicate<T> validator;
 
@@ -34,15 +34,15 @@ public abstract class InteractiveParameter<T> {
     }
     public abstract String displayString(T object);
 
-    public Text displayText(T object) {
-        return Text.of(displayString(object));
+    public Component displayText(T object) {
+        return Component.literal(displayString(object));
     }
 
     private T tryCast(Object object) throws ClassCastException {
         return type.cast(object);
     }
 
-    public Text tryDisplayText(Object object) throws ClassCastException {
+    public Component tryDisplayText(Object object) throws ClassCastException {
         return displayText(tryCast(object));
     }
 
@@ -55,7 +55,7 @@ public abstract class InteractiveParameter<T> {
      * @param ctx command context setting parameter
      * @return if parameter was valid
      */
-    public InteractiveResult<T> loadFromCommandContext(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
+    public InteractiveResult<T> loadFromCommandContext(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
 
         T val = getFromCommandContext(ctx);
         if(validator != null && !validator.test(val))
@@ -65,7 +65,7 @@ public abstract class InteractiveParameter<T> {
         return InteractiveResult.success(val);
     }
 
-    protected abstract T getFromCommandContext(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException;
+    protected abstract T getFromCommandContext(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException;
 
 
     /**
@@ -73,7 +73,7 @@ public abstract class InteractiveParameter<T> {
      * @param ctx current context
      * @return parameter or null if there is no default
      */
-    public T getDefaultVal(CommandContext<ServerCommandSource> ctx){
+    public T getDefaultVal(CommandContext<CommandSourceStack> ctx){
         if(defaultVal != null)
         {
             return defaultVal;
@@ -91,7 +91,7 @@ public abstract class InteractiveParameter<T> {
         return this;
     }
 
-    public InteractiveParameter<T> setDefaultProvider(Function<CommandContext<ServerCommandSource>, T> provider) {
+    public InteractiveParameter<T> setDefaultProvider(Function<CommandContext<CommandSourceStack>, T> provider) {
         defaultValProvider = provider;
         return this;
     }
@@ -101,13 +101,13 @@ public abstract class InteractiveParameter<T> {
         return this;
     }
 
-    public abstract ArgumentType<T> getCommandArgumentType(CommandRegistryAccess registryAccess);
+    public abstract ArgumentType<T> getCommandArgumentType(CommandBuildContext registryAccess);
 
-    public InteractiveParameter<T> setSuggestionProvider(SuggestionProvider<ServerCommandSource> provider){
+    public InteractiveParameter<T> setSuggestionProvider(SuggestionProvider<CommandSourceStack> provider){
         suggestionProvider = provider;
         return this;
     }
-    public SuggestionProvider<ServerCommandSource> getSuggestionProvider(){
+    public SuggestionProvider<CommandSourceStack> getSuggestionProvider(){
         return suggestionProvider;
     }
 

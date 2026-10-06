@@ -2,11 +2,12 @@ package edu.byu.minecraft.cat.commands.interactive;
 
 import edu.byu.minecraft.cat.commands.interactive.parameters.InteractiveParameter;
 import joptsimple.ValueConversionException;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 
+import java.awt.*;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -18,24 +19,24 @@ public class InteractiveDisplayLine<T> implements InteractiveLine<T> {
     }
 
     @Override
-    public Text getText(Map<String, Object> parameters, InteractiveCommandBuilder builder) {
+    public Component getText(Map<String, Object> parameters, InteractiveCommandBuilder builder) {
         String paramName = param.getName();
-        MutableText root = Text.literal("");
-        MutableText argText = Text.literal(paramName+": ");
-        Text valueText;
+        MutableComponent root = Component.literal("");
+        MutableComponent argComponent = Component.literal(paramName+": ");
+        Component valueComponent;
         Object paramVal = parameters.get(paramName);
         if(paramVal != null) {
             try {
-                valueText = param.tryDisplayText(paramVal);
+                valueComponent = param.tryDisplayText(paramVal);
             } catch (ClassCastException e) {
                 // I have no idea how we messed up so badly to get here
                 throw new ValueConversionException("Invalid type in field \"" + paramName + "\"", e);
             }
         }
         else {
-            valueText = Text.literal("UNSET").setStyle(Style.EMPTY.withColor(Formatting.RED));
+            valueComponent = Component.literal("UNSET").setStyle(Style.EMPTY.withColor(ChatFormatting.RED));
         }
-        return root.append(argText).append(valueText);
+        return root.append(argComponent).append(valueComponent);
     }
 
     @Override

@@ -2,7 +2,7 @@ package edu.byu.minecraft.cat.dataaccess.sqlite;
 
 import edu.byu.minecraft.cat.CivsAndTitles;
 import edu.byu.minecraft.cat.dataaccess.DataAccessException;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.Identifier;
 
 import java.io.File;
 import java.io.InputStream;

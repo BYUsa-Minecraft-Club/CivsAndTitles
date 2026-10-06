@@ -1,8 +1,7 @@
 package edu.byu.minecraft.cat.model;
 
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import org.jetbrains.annotations.Nullable;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 
 import java.util.Optional;
 
@@ -13,7 +12,7 @@ import java.util.Optional;
  * @param format       title display
  * @param description title description, what was required to acquire the title, possible lore
  */
-public record Title(String title, Text format, String description, Type type, Optional<Identifier> advancement) {
+public record Title(String title, Component format, String description, Type type, Optional<Identifier> advancement) {
     public enum Type {
         DEFAULT,
         WORLD,

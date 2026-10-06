@@ -11,10 +11,10 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import edu.byu.minecraft.cat.commands.interactive.parameters.InteractiveParameter;
 import edu.byu.minecraft.cat.commands.interactive.parameters.InteractiveResult;
-import net.minecraft.command.CommandRegistryAccess;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
+import net.minecraft.commands.CommandBuildContext;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -81,7 +81,7 @@ public class InteractiveManager {
 
     private final Map<String, InteractiveParameter<?>> parameterInfoMap;
 
-    private BiFunction<CommandContext<ServerCommandSource>, Map<String, Object>, Integer> finishConsumer;
+    private BiFunction<CommandContext<CommandSourceStack>, Map<String, Object>, Integer> finishConsumer;
 
     public InteractiveManager(List <String> basePath){
         this.basePath = basePath;
@@ -106,23 +106,27 @@ public class InteractiveManager {
         return this;
     }
 
-    public InteractiveManager setDataHandler(BiFunction<CommandContext<ServerCommandSource>, Map<String, Object>, Integer> consumer){
+    public InteractiveManager setDataHandler(BiFunction<CommandContext<CommandSourceStack>, Map<String, Object>, Integer> consumer){
         finishConsumer = consumer;
         return this;
     }
-    public void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registryAccess, @Nullable Predicate<ServerCommandSource> permission) {
-        ArgumentBuilder<ServerCommandSource, ?> top;
-        LiteralArgumentBuilder<ServerCommandSource> base;
-        ArgumentBuilder<ServerCommandSource, ?> tail;
-        ArgumentBuilder<ServerCommandSource, ?> arg;
+    public void register(
+            CommandDispatcher<CommandSourceStack> dispatcher,
+            CommandBuildContext registryAccess,
+            @Nullable Predicate<CommandSourceStack> permission
+    ) {
+        ArgumentBuilder<CommandSourceStack, ?> top;
+        LiteralArgumentBuilder<CommandSourceStack> base;
+        ArgumentBuilder<CommandSourceStack, ?> tail;
+        ArgumentBuilder<CommandSourceStack, ?> arg;
         top = argument("sessionId", IntegerArgumentType.integer());
         //handle parameters
         for (var line: lines) {
             for (InteractiveParameter<?> parameter: line.getLineParameters()) {
                 String name = parameter.getName();
                 tail = literal(name);
-                RequiredArgumentBuilder<ServerCommandSource, ?> arg2 = argument(name, parameter.getCommandArgumentType(registryAccess));
-                SuggestionProvider<ServerCommandSource> suggester = parameter.getSuggestionProvider();
+                RequiredArgumentBuilder<CommandSourceStack, ?> arg2 = argument(name, parameter.getCommandArgumentType(registryAccess));
+                SuggestionProvider<CommandSourceStack> suggester = parameter.getSuggestionProvider();
                 if (suggester != null) {
                     arg2.suggests(suggester);
                 }
@@ -145,8 +149,8 @@ public class InteractiveManager {
         tail = literal("start");
         if(startArg != null)
         {
-            RequiredArgumentBuilder<ServerCommandSource, ?> arg2 = argument(startArg.getName(), startArg.getCommandArgumentType(registryAccess));
-            SuggestionProvider<ServerCommandSource> suggester = startArg.getSuggestionProvider();
+            RequiredArgumentBuilder<CommandSourceStack, ?> arg2 = argument(startArg.getName(), startArg.getCommandArgumentType(registryAccess));
+            SuggestionProvider<CommandSourceStack> suggester = startArg.getSuggestionProvider();
             if (suggester != null) {
                 arg2.suggests(suggester);
             }
@@ -173,7 +177,7 @@ public class InteractiveManager {
             base = literal(basePath.get(i));
             base.then(tail);
         }
-        base.requires(ServerCommandSource::isExecutedByPlayer);
+        base.requires(CommandSourceStack::isPlayer);
         if (permission != null) base.requires(permission);
 
         dispatcher.register(base);
@@ -181,20 +185,20 @@ public class InteractiveManager {
 
 
     //function handlers
-    private void displayInteractive(ServerCommandSource source, int sessionId){
+    private void displayInteractive(CommandSourceStack source, int sessionId){
         CommandBuilder builder = new CommandBuilder(sessionId);
         for(var line : lines){
-            source.sendFeedback(()-> line.getText(activeSessions.get(sessionId).parameters, builder, parameterInfoMap), false);
+            source.sendSuccess(()-> line.getText(activeSessions.get(sessionId).parameters, builder, parameterInfoMap), false);
         }
     }
 
-    private Integer startInteractive (CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
-        ServerPlayerEntity playerEntity = ctx.getSource().getPlayer();
+    private Integer startInteractive (CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        ServerPlayer playerEntity = ctx.getSource().getPlayer();
         UUID player;
         if (playerEntity != null) {
-            player = playerEntity.getUuid();
+            player = playerEntity.getUUID();
         } else {
-            ctx.getSource().sendFeedback(()-> Text.literal("You cannot create a session"), false);
+            ctx.getSource().sendSuccess(()-> Component.literal("You cannot create a session"), false);
             return 0;
         }
         Map<String, Object> defaults = new HashMap<>();
@@ -212,36 +216,36 @@ public class InteractiveManager {
         return 1;
     }
 
-    private boolean checkSession(CommandContext<ServerCommandSource> ctx, int id){
+    private boolean checkSession(CommandContext<CommandSourceStack> ctx, int id){
         if (!activeSessions.containsKey(id)){
-            ctx.getSource().sendFeedback(()-> Text.literal("invalid session id " + id + "valid ids are"), false);
+            ctx.getSource().sendSuccess(()-> Component.literal("invalid session id " + id + "valid ids are"), false);
             for(var session : activeSessions.keySet()){
-                ctx.getSource().sendFeedback(()-> Text.literal("session id " + session), false);
+                ctx.getSource().sendSuccess(()-> Component.literal("session id " + session), false);
             }
             return false;
         }
         UUID player = activeSessions.get(id).player();
-        ServerPlayerEntity playerEntity = ctx.getSource().getPlayer();
-        if (playerEntity == null || !player.equals(playerEntity.getUuid()))
+        ServerPlayer playerEntity = ctx.getSource().getPlayer();
+        if (playerEntity == null || !player.equals(playerEntity.getUUID()))
         {
-            ctx.getSource().sendFeedback(()-> Text.literal("You are not the owner of session"), false);
+            ctx.getSource().sendSuccess(()-> Component.literal("You are not the owner of session"), false);
             return false;
         }
         return true;
     }
 
-    private Integer setParameter (CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
+    private Integer setParameter (CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         Integer id = ctx.getArgument("sessionId", Integer.class);
         if(!checkSession(ctx, id)){
             return 0;
         }
-        List<ParsedCommandNode<ServerCommandSource>> nodes = ctx.getNodes();
+        List<ParsedCommandNode<CommandSourceStack>> nodes = ctx.getNodes();
         String paramName = nodes.get(nodes.size()-2).getNode().getName();
         //read value and set value
         InteractiveResult<?> paramVal = parameterInfoMap.get(paramName).loadFromCommandContext(ctx);
         if (paramVal.isError())
         {
-            ctx.getSource().sendFeedback(()-> Text.literal("Invalid value for " + paramName + ": " + paramVal.getOrPartial()), false);
+            ctx.getSource().sendSuccess(()-> Component.literal("Invalid value for " + paramName + ": " + paramVal.getOrPartial()), false);
             return 0;
         }
         activeSessions.get(id).parameters.put(paramName, paramVal.getOrThrow());
@@ -250,12 +254,12 @@ public class InteractiveManager {
         return 1;
     }
 
-    private Integer clearParameter (CommandContext<ServerCommandSource> ctx) {
+    private Integer clearParameter (CommandContext<CommandSourceStack> ctx) {
         Integer id = ctx.getArgument("sessionId", Integer.class);
         if(!checkSession(ctx, id)){
             return 0;
         }
-        List<ParsedCommandNode<ServerCommandSource>> nodes = ctx.getNodes();
+        List<ParsedCommandNode<CommandSourceStack>> nodes = ctx.getNodes();
         String paramName = nodes.getLast().getNode().getName();
 
         activeSessions.get(id).parameters.put(paramName, null);
@@ -264,7 +268,7 @@ public class InteractiveManager {
         return 1;
     }
 
-    private Integer finishInteractive(CommandContext<ServerCommandSource> ctx){
+    private Integer finishInteractive(CommandContext<CommandSourceStack> ctx){
         Integer id = ctx.getArgument("sessionId", Integer.class);
         if(!checkSession(ctx, id)){
             return 0;
@@ -276,7 +280,7 @@ public class InteractiveManager {
         return 1;
     }
 
-    private Integer showInteractive(CommandContext<ServerCommandSource> ctx){
+    private Integer showInteractive(CommandContext<CommandSourceStack> ctx){
         Integer id = ctx.getArgument("sessionId", Integer.class);
         if(!checkSession(ctx, id)){
             return 0;

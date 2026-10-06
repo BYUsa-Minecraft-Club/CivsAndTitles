@@ -2,37 +2,37 @@ package edu.byu.minecraft.cat.commands.interactive.parameters;
 
 import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.context.CommandContext;
-import net.minecraft.command.CommandRegistryAccess;
-import net.minecraft.command.argument.TextArgumentType;
-import net.minecraft.nbt.NbtElement;
+import net.minecraft.commands.CommandBuildContext;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.arguments.ComponentArgument;
 import net.minecraft.nbt.NbtOps;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.Text;
-import net.minecraft.text.TextCodecs;
+import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentSerialization;
 
-public class InteractiveTextParameter extends InteractiveParameter<Text> {
+public class InteractiveTextParameter extends InteractiveParameter<Component> {
 
     public InteractiveTextParameter(String name) {
-        super(name, Text.class);
+        super(name, Component.class);
     }
     @Override
-    public String displayString(Text object) {
-        NbtElement test = TextCodecs.CODEC.encodeStart(NbtOps.INSTANCE,object).getOrThrow();
+    public String displayString(Component object) {
+        Tag test = ComponentSerialization.CODEC.encodeStart(NbtOps.INSTANCE,object).getOrThrow();
         return test.toString();
     }
 
     @Override
-    public Text displayText(Text object) {
+    public Component displayText(Component object) {
         return object;
     }
 
     @Override
-    public Text getFromCommandContext(CommandContext<ServerCommandSource> ctx) {
-        return TextArgumentType.getTextArgument(ctx, getName());
+    public Component getFromCommandContext(CommandContext<CommandSourceStack> ctx) {
+        return ComponentArgument.getRawComponent(ctx, getName());
     }
 
     @Override
-    public ArgumentType<Text> getCommandArgumentType(CommandRegistryAccess registryAccess) {
-        return TextArgumentType.text(registryAccess);
+    public ArgumentType<Component> getCommandArgumentType(CommandBuildContext registryAccess) {
+        return ComponentArgument.textComponent(registryAccess);
     }
 }

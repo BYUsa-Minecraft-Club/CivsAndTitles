@@ -1,16 +1,16 @@
 package edu.byu.minecraft.cat.commands.interactive;
 
 import edu.byu.minecraft.cat.commands.interactive.parameters.InteractiveParameter;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 import java.util.Collection;
 import java.util.Map;
 
 public interface InteractiveLine<T> {
-    Text getText(Map<String, Object> parameters, InteractiveCommandBuilder commandBuilder);
+    Component getText(Map<String, Object> parameters, InteractiveCommandBuilder commandBuilder);
     Collection<InteractiveParameter<T>> getLineParameters();
 
-    default Text getText(Map<String, Object> parameters, InteractiveCommandBuilder commandBuilder, Map<String, InteractiveParameter<?>> parameterInfoMap) {
+    default Component getText(Map<String, Object> parameters, InteractiveCommandBuilder commandBuilder, Map<String, InteractiveParameter<?>> parameterInfoMap) {
         return getText(parameters, commandBuilder);
     }
 }

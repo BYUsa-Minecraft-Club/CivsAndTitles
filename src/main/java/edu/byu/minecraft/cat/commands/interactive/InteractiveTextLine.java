@@ -1,24 +1,24 @@
 package edu.byu.minecraft.cat.commands.interactive;
 
 import edu.byu.minecraft.cat.commands.interactive.parameters.InteractiveParameter;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
-public class InteractiveTextLine implements InteractiveLine<Text> {
-    Text text;
-    public InteractiveTextLine(Text text){
+public class InteractiveTextLine implements InteractiveLine<Component> {
+    Component text;
+    public InteractiveTextLine(Component text){
         this.text = text;
     }
     @Override
-    public Text getText(Map<String, Object> parameters, InteractiveCommandBuilder builder) {
+    public Component getText(Map<String, Object> parameters, InteractiveCommandBuilder builder) {
         return text;
     }
 
     @Override
-    public Collection<InteractiveParameter<Text>> getLineParameters() {
+    public Collection<InteractiveParameter<Component>> getLineParameters() {
         return new ArrayList<>();
     }
 }

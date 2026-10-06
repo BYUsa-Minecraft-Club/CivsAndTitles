@@ -4,29 +4,29 @@ import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import edu.byu.minecraft.cat.CivsAndTitles;
 import edu.byu.minecraft.cat.model.Title;
 import edu.byu.minecraft.cat.util.TitleUtilities;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import java.util.UUID;
 
-@Mixin(PlayerEntity.class)
-public abstract class PlayerEntityMixin {
-    @ModifyReturnValue(method="addTellClickEvent", at=@At("RETURN"))
-    private MutableText insertTitle(MutableText displayName) {
+@Mixin(Player.class)
+public abstract class PlayerMixin {
+    @ModifyReturnValue(method="decorateDisplayNameComponent", at=@At("RETURN"))
+    private MutableComponent insertTitle(MutableComponent displayName) {
         if (!CivsAndTitles.playerMixinEnabled()) return displayName;
 
-        UUID id = ((PlayerEntity) (Object) this).getUuid();
+        UUID id = ((Player) (Object) this).getUUID();
         Title title = TitleUtilities.getCache(id);
 
         if (title == null) return displayName;
 
-        return Text.empty()
+        return Component.empty()
                 .setStyle(displayName.getStyle())
                 .append(title.format())
                 .append(" ")
                 .append(displayName)
-                .styled(style -> style);
+                .withStyle(style -> style);
     }
 }

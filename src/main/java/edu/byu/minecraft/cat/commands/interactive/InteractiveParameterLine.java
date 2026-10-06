@@ -2,11 +2,11 @@ package edu.byu.minecraft.cat.commands.interactive;
 
 import edu.byu.minecraft.cat.commands.interactive.parameters.InteractiveParameter;
 import joptsimple.ValueConversionException;
-import net.minecraft.text.ClickEvent;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -19,11 +19,11 @@ public class InteractiveParameterLine<T> implements InteractiveLine<T> {
     }
 
     @Override
-    public Text getText(Map<String, Object> parameters, InteractiveCommandBuilder builder) {
+    public Component getText(Map<String, Object> parameters, InteractiveCommandBuilder builder) {
         String paramName = param.getName();
-        MutableText root = Text.literal("");
-        MutableText argText = Text.literal(paramName+": ");
-        Text valueText;
+        MutableComponent root = Component.literal("");
+        MutableComponent argText = Component.literal(paramName+": ");
+        Component valueText;
         Object paramVal = parameters.get(paramName);
         if(paramVal != null) {
             try {
@@ -34,10 +34,10 @@ public class InteractiveParameterLine<T> implements InteractiveLine<T> {
             }
         }
         else {
-            valueText = Text.literal("UNSET").setStyle(Style.EMPTY.withColor(Formatting.RED));
+            valueText = Component.literal("UNSET").setStyle(Style.EMPTY.withColor(ChatFormatting.RED));
         }
-        MutableText clickText = Text.literal(" (SET)");
-        clickText.setStyle(Style.EMPTY.withColor(Formatting.YELLOW).withClickEvent(new ClickEvent.SuggestCommand(builder.makeSetCommand(paramName)
+        MutableComponent clickText = Component.literal(" (SET)");
+        clickText.setStyle(Style.EMPTY.withColor(ChatFormatting.YELLOW).withClickEvent(new ClickEvent.SuggestCommand(builder.makeSetCommand(paramName)
         )));
         return root.append(argText).append(valueText).append(clickText);
     }

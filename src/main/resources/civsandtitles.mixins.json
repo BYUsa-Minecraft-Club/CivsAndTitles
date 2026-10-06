@@ -4,8 +4,8 @@
   "package": "edu.byu.minecraft.cat.mixins",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "PlayerAdvancementTrackerMixin",
-    "PlayerEntityMixin"
+    "PlayerAdvancementsMixin",
+    "PlayerMixin"
   ],
   "client": [],
   "server": [],

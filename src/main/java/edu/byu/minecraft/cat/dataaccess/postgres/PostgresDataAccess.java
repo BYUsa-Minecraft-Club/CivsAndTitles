@@ -4,7 +4,7 @@ import edu.byu.minecraft.cat.CivsAndTitles;
 import edu.byu.minecraft.cat.config.PostgresConfig;
 import edu.byu.minecraft.cat.dataaccess.*;
 import edu.byu.minecraft.cat.dataaccess.sqlite.SqliteDataAccess;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.Identifier;
 
 import java.io.InputStream;
 import java.sql.*;
